@@ -1,3 +1,7 @@
+.idea
+.ipynb_checkpoints
+Libraries
+*.iml
 *.class
 
 # Mobile Tools for Java (J2ME)

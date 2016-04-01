@@ -1,0 +1,46 @@
+Not present in twitter_pos.txt, was in chunk.txt between 975 and 977
+RT o
+@Slijterijmeisje o
+: o
+Kreeg b-np
+net i-np
+een i-np
+bruikbare i-np
+tip i-np
+van i-np
+iemand i-np
+die b-vp
+vorige b-np
+week i-np
+was b-vp
+begonnen i-vp
+met b-np
+een b-pp
+whiskydieet b-np
+, o
+hij b-np
+was b-vp
+nu b-np
+al i-np
+3 i-np
+dagen i-np
+kwijt i-np
+
+
+//confused was missing, tagged as JJ and VBN, probably is VBN on line 2732
+@Miss_deadpool USR
+May NNP
+'s POS
+costume NN
+is VBZ
+the DT
+giant JJ
+spider NN
+on IN
+her PRP$
+upper NN
+body NN
+. .
+I PRP
+'m VBP
+confused JJ VBN

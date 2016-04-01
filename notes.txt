@@ -1,0 +1,25 @@
+- LabeledLDA on Freebase to utilize unlabeled dataset
+- POS Tagger using Twitter tagged POS using Penn Bank tags
+- SVM for learning whether tweet informative capitalized or not
+	* features based on capitalization will improve accuracy
+//capitalization 	
+	To
+model unlabeled entities and their possible types, we
+apply LabeledLDA (Ramage et al., 2009), constraining
+each entity’s distribution over topics based on
+its set of possible types according to Freebase
+
+ Additionally we
+have shown the benefits of features generated from
+T-POS and T-CHUNK in segmenting Named Entities.
+
+POSTagger
+Best results - 83% cross validation
+Use Alan's data, with maxent
+
+Chunker - 85%
+Use Alan's data with maxent
+
+get features from chunker and postagger
+run maxent classifier
+use viterbi to find best tags
