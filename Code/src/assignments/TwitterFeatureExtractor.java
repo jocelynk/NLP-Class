@@ -225,7 +225,7 @@ public class TwitterFeatureExtractor {
         /**Relations**/
         //beginning of NE group
         if(feature.getNeTag().toUpperCase().equals("B")) {
-            features.add(new Pair("BEGIN_NE_GROUP", true);
+            features.add(new Pair("BEGIN_NE_GROUP", true));
         }
 
         //end of NE group
