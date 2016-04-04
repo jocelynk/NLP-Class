@@ -1,9 +1,7 @@
 package assignments;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.zip.GZIPInputStream;
 
@@ -11,14 +9,10 @@ import math.DoubleArrays;
 import opennlp.maxent.GIS;
 import opennlp.maxent.io.GISModelReader;
 import opennlp.maxent.io.SuffixSensitiveGISModelWriter;
-import opennlp.model.AbstractModel;
-import opennlp.model.AbstractModelWriter;
-import opennlp.model.DataIndexer;
-import opennlp.model.DataReader;
-import opennlp.model.FileEventStream;
-import opennlp.model.MaxentModel;
-import opennlp.model.OnePassDataIndexer;
-import opennlp.model.PlainTextFileDataReader;
+import opennlp.model.*;
+import util.State;
+import util.Trellis;
+
 /**
  * Created by User on 3/22/2016.
  */
@@ -26,6 +20,7 @@ public class NamedEntityExtractor {
     private static List<ArrayList<String[]>> trainingSet = new ArrayList<>();
     private static List<ArrayList<String[]>> testSet = new ArrayList<>();
     private static final String TRAIN_FILE_NAME = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/train.txt";
+    private static MaxentModel maxentModel;
 
     public static void splitData() throws IOException {
         try (BufferedReader br = new BufferedReader(new FileReader(TRAIN_FILE_NAME))) {
@@ -108,22 +103,11 @@ public class NamedEntityExtractor {
         }
     }
 
-    public static void maxEnt() {
-        /* // here are the input training samples
-        List<Event> samples =  Arrays.asList(new Event[] {
-                //           outcome + context
-                createEvent("c=1", "a=1", "b=1"),
-                createEvent("c=1", "a=1", "b=0"),
-                createEvent("c=0", "a=0", "b=1"),
-                createEvent("c=0", "a=0", "b=0")
-        });
+    public static void maxEnt() throws IOException {
+         // here are the input training samples
 
-        // training the model
-        EventStream stream = new ListEventStream(samples);
-        MaxentModel model = GIS.trainModel(stream);*/
-
-        /*String trainingFileName = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/twitter_data.txt";//"training-file.txt";
-        String modelFileName = "trained-model.maxent.gz";
+        String trainingFileName = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/realTeam.dat";//"training-file.txt";
+        String modelFileName = "trained-team-model.maxent.gz";
         DataIndexer indexer = null;
         try {
             indexer = new OnePassDataIndexer( new FileEventStream(trainingFileName));
@@ -142,20 +126,73 @@ public class NamedEntityExtractor {
         FileInputStream inputStream = new FileInputStream(modelFileName);
         InputStream decodedInputStream = new GZIPInputStream(inputStream);
         DataReader modelReader = new PlainTextFileDataReader(decodedInputStream);
-        MaxentModel loadedMaxentModel = new GISModelReader(modelReader).getModel();
+        maxentModel = new GISModelReader(modelReader).getModel();
 
         // Now predicting the outcome using the loaded model
-        String[] context = {"a=1", "b=0"};
-        double[] outcomeProbs = loadedMaxentModel.eval(context);
-        String outcome = loadedMaxentModel.getBestOutcome(outcomeProbs);*/
+        //String[] context = {"a=1", "b=0"};
+
+        String[] context = {"home", "pdiff=0.6875", "ptwins=0.5"};
+        double[] outcomeProbs = maxentModel.eval(context);
+        String outcome = maxentModel.getBestOutcome(outcomeProbs);
+
     }
+
+    private Trellis<State> buildTrellis(List<String> sentence) {
+        final Trellis<State> trellis = new Trellis<State>();
+        trellis.setStartState(State.getStartState());
+        final State stopState = State.getStopState(sentence.size() + 2);
+        trellis.setStopState(stopState);
+        Set<State> states = Collections.singleton(State.getStartState());
+        for (int position = 0; position <= sentence.size()
+                + 1; position++) {
+            final Set<State> nextStates = new HashSet<State>();
+            for (final State state : states) {
+                if (state.equals(stopState)) {
+                    continue;
+                }
+
+                //build context
+                String[] context = {"home", "pdiff=0.6875", "ptwins=0.5"};
+                double[] outcomeProbs = maxentModel.eval(context);
+
+                for(int i = 0; i < maxentModel.getNumOutcomes(); i++) {
+                    String outcome = maxentModel.getOutcome(i);
+                    double prob = outcomeProbs[i];
+                    final State nextState = state.getNextState(outcome);
+                    trellis.setTransitionCount(state, nextState, prob);
+                    nextStates.add(nextState);
+
+                }
+
+
+                /*final LocalTrigramContext localTrigramContext = new LocalTrigramContext(
+                        sentence, position, state.getPreviousPreviousTag(),
+                        state.getPreviousTag());
+                final Counter<String> tagScores = localTrigramScorer
+                        .getLogScoreCounter(localTrigramContext);
+                for (final String tag : tagScores.keySet()) {
+                    final double score = tagScores.getCount(tag);
+                    final State nextState = state.getNextState(tag);
+                    trellis.setTransitionCount(state, nextState, score);
+                    nextStates.add(nextState);
+                }*/
+            }
+            // System.out.println("States: "+nextStates);
+            states = nextStates;
+        }
+        return trellis;
+    }
+
+
+
 
     //tokenizer
     //postagger based off maxent
     //named entity
     public static void main(String args[]) throws IOException {
 
-        splitData();
+        //splitData();
+        maxEnt();
 
     }
 

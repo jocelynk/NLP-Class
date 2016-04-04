@@ -23,7 +23,7 @@ public class TwitterFeatureExtractor {
 
     }
 
-    public List<Pair> extractFeatures(int position, List<WordFeature> sentence) {
+    public List<Pair> extractFeatures(int position, List<WordFeature> sentence, boolean train) {
         List<Pair> features = new ArrayList<>();
         Pattern pattern;
         Matcher matcher;
@@ -156,33 +156,68 @@ public class TwitterFeatureExtractor {
 
 
         /***Features of Labels***/
-        /**NE**/
-        //prevtag=='O' and current NE label is 'O'
-        if((position > 0 && sentence.get(position - 1).getNeTag().toUpperCase().equals("O")) && feature.getNeTag().toUpperCase().equals("O")) {
-            Pair<String, String> retweet = new Pair("NE_PREV+NE_CUR", "O");
-            features.add(retweet);
+        /** NE for training**/
+        if(train) {
+            //prevtag=='O' and current NE label is 'O'
+            if ((position > 0 && sentence.get(position - 1).getNeTag().toUpperCase().equals("O")) && feature.getNeTag().toUpperCase().equals("O")) {
+                Pair<String, String> retweet = new Pair("NE_PREV+NE_CUR", "O");
+                features.add(retweet);
+            }
+
+            if (position > 0) {
+                //i-1 NE tag
+                Pair<String, String> ne_prev = new Pair("NE_PREV", sentence.get(position - 1).getNeTag().toUpperCase());
+                features.add(ne_prev);
+
+                //i-1 NE tag + word
+                Pair<String, String> ne_prev_word = new Pair("NE_PREV+WORD", sentence.get(position - 1).getNeTag().toUpperCase() + "_" + word);
+                features.add(ne_prev_word);
+            }
+
+            if (position - 1 > 0) {
+                //i-2 NE tag
+                Pair<String, String> ne_prev = new Pair("NE_PREPREV", sentence.get(position - 2).getNeTag().toUpperCase());
+                features.add(ne_prev);
+
+                //i-1 NE tag + i-2 NE tag
+                Pair<String, String> ne_prePrev = new Pair("NE_PRE+NE_PREV", sentence.get(position - 1).getNeTag().toUpperCase() + "_" + sentence.get(position - 2).getNeTag().toUpperCase());
+                features.add(ne_prePrev);
+            }
+
+            /**Relations**/
+            //beginning of NE group
+            if(feature.getNeTag().toUpperCase().equals("B")) {
+                features.add(new Pair("BEGIN_NE_GROUP", true));
+            }
+
+            //end of NE group
+            boolean NE_END = true;
+            if(!feature.getNeTag().toUpperCase().equals("I")) {
+                NE_END = false;
+            } else if(position < sentence.size() - 1 && sentence.get(position + 1).getNeTag().toUpperCase().equals("I")) {
+                NE_END = false;
+            }
+
+            if(NE_END) {
+                features.add(new Pair("END_NE_GROUP", true));
+            }
+
+            //in between NE group
+            boolean NE_BTWN = true;
+            if(!feature.getNeTag().toUpperCase().equals("I")) {
+                NE_BTWN = false;
+            } else if(position == sentence.size() - 1 || position == 0) {
+                NE_BTWN = false;
+            } else if(!sentence.get(position + 1).getNeTag().toUpperCase().equals("I")) {
+                NE_BTWN = false;
+            }
+
+            if(NE_BTWN) {
+                features.add(new Pair("BTWN_NE_GROUP", true));
+            }
+
+
         }
-
-        if(position > 0) {
-            //i-1 NE tag
-            Pair<String, String> ne_prev = new Pair("NE_PREV", sentence.get(position - 1).getNeTag().toUpperCase());
-            features.add(ne_prev);
-
-            //i-1 NE tag + word
-            Pair<String, String> ne_prev_word = new Pair("NE_PREV+WORD", sentence.get(position - 1).getNeTag().toUpperCase() + "_" + word);
-            features.add(ne_prev_word);
-        }
-
-        if(position - 1 > 0) {
-            //i-2 NE tag
-            Pair<String, String> ne_prev = new Pair("NE_PREPREV", sentence.get(position - 2).getNeTag().toUpperCase());
-            features.add(ne_prev);
-
-            //i-1 NE tag + i-2 NE tag
-            Pair<String, String> ne_prePrev = new Pair("NE_PRE+NE_PREV", sentence.get(position - 1).getNeTag().toUpperCase() + "_" + sentence.get(position - 2).getNeTag().toUpperCase());
-            features.add(ne_prePrev);
-        }
-
         /**POS TAG **/
         features.add(new Pair("POS_TAG", feature.getPosTag()));
 
@@ -221,39 +256,6 @@ public class TwitterFeatureExtractor {
         if(position > 0) {
             features.add(new Pair("POS_TAG+NE_PREV", word + "_" + sentence.get(position-1).getNeTag()));
         }
-
-        /**Relations**/
-        //beginning of NE group
-        if(feature.getNeTag().toUpperCase().equals("B")) {
-            features.add(new Pair("BEGIN_NE_GROUP", true));
-        }
-
-        //end of NE group
-        boolean NE_END = true;
-        if(!feature.getNeTag().toUpperCase().equals("I")) {
-            NE_END = false;
-        } else if(position < sentence.size() - 1 && sentence.get(position + 1).getNeTag().toUpperCase().equals("I")) {
-            NE_END = false;
-        }
-
-        if(NE_END) {
-            features.add(new Pair("END_NE_GROUP", true));
-        }
-
-        //in between NE group
-        boolean NE_BTWN = true;
-        if(!feature.getNeTag().toUpperCase().equals("I")) {
-            NE_BTWN = false;
-        } else if(position == sentence.size() - 1 || position == 0) {
-            NE_BTWN = false;
-        } else if(!sentence.get(position + 1).getNeTag().toUpperCase().equals("I")) {
-            NE_BTWN = false;
-        }
-
-        if(NE_BTWN) {
-            features.add(new Pair("BTWN_NE_GROUP", true));
-        }
-
 
         return features;
     }
