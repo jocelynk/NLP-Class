@@ -345,10 +345,10 @@ public class NamedEntityExtractor {
     private static Trellis<State> buildTrellis(List<WordFeature> sentence) {
         final Trellis<State> trellis = new Trellis<State>();
         trellis.setStartState(State.getStartState());
-        final State stopState = State.getStopState(sentence.size());
+        final State stopState = State.getStopState(sentence.size()+2);
         trellis.setStopState(stopState);
         Set<State> states = Collections.singleton(State.getStartState());
-        for (int position = 0; position < sentence.size(); position++) {
+        for (int position = 0; position <= sentence.size() + 1; position++) {
             final Set<State> nextStates = new HashSet<State>();
             for (final State state : states) {
                 if (state.equals(stopState)) {
@@ -395,6 +395,8 @@ public class NamedEntityExtractor {
     }
 
     public static List<String> tag(ArrayList<WordFeature> sentence) {
+        sentence.remove(0);
+        sentence.remove(sentence.size()-1);
         final Trellis<State> trellis = buildTrellis(sentence);
         ViterbiDecoder decoder = new ViterbiDecoder();
         final List<State> states = decoder.getBestPath(trellis);
@@ -423,9 +425,19 @@ public class NamedEntityExtractor {
         Boolean modelCreated = true;//createMaxEntModel();
         if(modelCreated) {
             createMaxEnt();
+            double numTagsCorrect = 0;
+            double numTags = 0;
             for(ArrayList<WordFeature> sentence : testSet) {
                 List<String> tags = tag(sentence);
+
+                for(int i = 1; i < sentence.size() - 1; i++) {
+                    if(sentence.get(i).getNeTag().equals(tags.get(i-1))) numTagsCorrect++;
+                    numTags++;
+                }
+
             }
+
+            System.out.println("Tag Accuracy: " + numTagsCorrect / numTags);
         }
 
     }

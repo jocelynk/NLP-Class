@@ -37,8 +37,8 @@ public class TwitterFeatureExtractor {
         List<Pair> features = new ArrayList<>();
         Pattern pattern;
         Matcher matcher;
-        WordFeature feature = sentence.get(position);
-        String word = feature.getWord();
+        WordFeature feature = position < sentence.size()? sentence.get(position) : null;
+        String word = feature == null? STOP_WORD : feature.getWord();
         /***Features of word***/
 
         if(word.equals(START_WORD) || word.equals(STOP_WORD)) {
