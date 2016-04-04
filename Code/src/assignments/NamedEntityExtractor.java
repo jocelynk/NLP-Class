@@ -24,6 +24,8 @@ public class NamedEntityExtractor {
     private static List<ArrayList<WordFeature>> testSet = new ArrayList<>();
     private static final String TRAIN_FILE_NAME = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/data-raw/train.txt";
     private static final String TEST_FILE_NAME = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/data-raw/dev1.txt";
+    private static final String MAXENT_DATA = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/models/twitter-maxent-data.txt";
+    private static final String MAXENT_MODEL = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/models/twitter-twitter-model.maxent.gz";
     private static MaxentModel maxentModel;
     static final String START_TAG = "<S>";
     static final String START_WORD = "<S>";
@@ -257,7 +259,7 @@ public class NamedEntityExtractor {
         BufferedWriter bw = null;
         try{
 
-            File file = new File("C:/Users/User/Documents/Cornell/Courses/NLP/HW4/models/twitter-maxent-data.txt");
+            File file = new File(MAXENT_DATA);
 
             /* This logic will make sure that the file
             * gets created if it is not present at the
@@ -311,8 +313,8 @@ public class NamedEntityExtractor {
     public static void createMaxEnt() throws IOException {
          // here are the input training samples
 
-        String trainingFileName = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/models/twitter-maxent-data.txt";
-        String modelFileName = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/models/trained-twitter-model.maxent.gz";
+        String trainingFileName = MAXENT_DATA;
+        String modelFileName = MAXENT_MODEL;
         DataIndexer indexer = null;
         try {
             indexer = new OnePassDataIndexer( new FileEventStream(trainingFileName));
@@ -414,6 +416,7 @@ public class NamedEntityExtractor {
     public static void main(String args[]) throws IOException {
 
         splitData();
+        //splitDataTrainOnly();
         posTagData();
         chunkTagData();
 
@@ -422,22 +425,64 @@ public class NamedEntityExtractor {
         double[] outcomeProbs = maxentModel.eval(context);
         String outcome = maxentModel.getBestOutcome(outcomeProbs);*/
 
-        Boolean modelCreated = true;//createMaxEntModel();
+        Boolean modelCreated = createMaxEntModel();
         if(modelCreated) {
             createMaxEnt();
             double numTagsCorrect = 0;
             double numTags = 0;
-            for(ArrayList<WordFeature> sentence : testSet) {
-                List<String> tags = tag(sentence);
+            double numNETagsCorrect = 0;
+            double numNETags = 0;
+            String labels[] = {"B", "I"};
+            BufferedWriter bw = null;
+            try{
 
-                for(int i = 1; i < sentence.size() - 1; i++) {
-                    if(sentence.get(i).getNeTag().equals(tags.get(i-1))) numTagsCorrect++;
-                    numTags++;
+                File file = new File("C:/Users/User/Documents/Cornell/Courses/NLP/HW4/results/dev_result.txt");
+
+                if(!file.exists()) {
+                    file.createNewFile();
                 }
 
+                FileWriter fw = new FileWriter(file);
+                bw = new BufferedWriter(fw);
+                for(ArrayList<WordFeature> sentence : testSet) {
+                    List<String> tags = tag(sentence);
+
+                    for(int i = 0; i < sentence.size(); i++) {
+                        bw.write(tags.get(i) + "\n");
+                        String wordNETag = sentence.get(i).getNeTag();
+                        if (wordNETag.equals(tags.get(i))) numTagsCorrect++;
+                        numTags++;
+
+                        if(wordNETag.equals("B") || wordNETag.equals("I")) {
+                            if (wordNETag.equals(tags.get(i))) {
+                                numNETagsCorrect++;
+                            }
+                            numNETags++;
+                        }
+                    }
+                    bw.write("\n");
+
+                }
+
+                System.out.println("File written Successfully");
+
+            }
+            catch (IOException ioe) {
+                ioe.printStackTrace();
+            }
+            finally
+            {
+                try{
+                    if(bw!=null)
+                        bw.close();
+                }catch(Exception ex){
+                    System.out.println("Error in closing the BufferedWriter"+ex);
+                }
             }
 
+
             System.out.println("Tag Accuracy: " + numTagsCorrect / numTags);
+            System.out.println("Named Entity Accuracy: " + numNETagsCorrect / numNETags);
         }
 
     }

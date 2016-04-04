@@ -15,6 +15,7 @@ import java.util.List;
  */
 public class TwitterPOSTagger {
     private static final String TWITTER_MODEL_MAXENT = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/models/twitter-en-pos-maxent.bin";
+    private static final String OPENNLP_MODEL_MAXENT = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/models/opennlp_models/en-pos-maxent.bin";
     public static void main(String args[]) {
 
     }

@@ -363,4 +363,17 @@ public class TwitterFeatureExtractor {
     The POS tag of the word combined with the tag of the preceding word
     The shape of the word combined with the tag of the preceding word*/
 
+    /*tokens = r"""(?x)      # set flag to allow verbose regexps "
+     http://[^ ]+       #urls
+   | \@[^ ]+            # Twitter usernames
+   | \#[^ ]+            # Twitter hashtags
+   | [A-Z]([A-Z]|\.|&)+        # abbreviations, e.g. U.S.A., AT&T
+   | \w+(-\w+)*        # words with optional internal hyphens
+   | \$?\d+(\.\d+)?%?  # currency and percentages, e.g. $12.40, 82%
+   | \.\.\.            # ellipsis
+   | \'s                # various things
+   | \'t
+   | n\'t
+   | [][.,;"'?():-_`]  # these are separate tokens*/
+
 }

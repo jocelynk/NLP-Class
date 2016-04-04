@@ -13,6 +13,7 @@ import java.io.InputStream;
  */
 public class TwitterChunker {
     private static final String TWITTER_CHUNKER_MODEL = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/models/twitter-en-chunker.bin";
+    private static final String OPENNLP_CHUNKER_MODEL = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/models/opennlp_models/en-chunker.bin";
 
     public static void main(String args[]) {
         InputStream modelIn = null;
