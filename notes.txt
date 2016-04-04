@@ -17,8 +17,12 @@ POSTagger
 Best results - 83% cross validation
 Use Alan's data, with maxent
 
+$ opennlp POSTaggerTrainer -type maxent -model twitter-en-pos-maxent.bin -lang en -data pos_tweets.txt -encoding UTF-8
+
 Chunker - 85%
 Use Alan's data with maxent
+
+opennlp ChunkerTrainerME -model twitter-en-chunker.bin -lang en -data pos_chunk_tweets.txt -encoding UTF-8
 
 get features from chunker and postagger
 run maxent classifier

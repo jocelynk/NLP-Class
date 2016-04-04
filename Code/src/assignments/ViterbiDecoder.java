@@ -28,6 +28,7 @@ public class ViterbiDecoder<S> implements TrellisDecoder<S> {
         states.push(currentState);
     }
 
+    /**Todo: figure out why first word is getting tagged as start**/
     @Override
     public List<S> getBestPath(Trellis<S> trellis) {
         List<S> result = new ArrayList<S>();

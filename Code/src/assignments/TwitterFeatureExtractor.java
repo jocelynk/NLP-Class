@@ -13,8 +13,13 @@ import java.util.regex.Pattern;
  */
 public class TwitterFeatureExtractor {
 
+    //Todo: Add NE in terms of previous predicted
+    //ToDo: Relation tagging between chunk tags
+
     //for all features need to append on label (B, I, O)
     public static void main(String args[]) {
+
+        System.out.println("" + true);
         /*Pattern punctuationPattern = Pattern.compile("[\\w,.!:\\'\\\"&]{2,}");
         Matcher m = punctuationPattern.matcher("''");
         if(m.find()) {
@@ -23,7 +28,7 @@ public class TwitterFeatureExtractor {
 
     }
 
-    public List<Pair> extractFeatures(int position, List<WordFeature> sentence, boolean train) {
+    public static List<Pair> extractFeatures(int position, List<WordFeature> sentence) {
         List<Pair> features = new ArrayList<>();
         Pattern pattern;
         Matcher matcher;
@@ -32,30 +37,30 @@ public class TwitterFeatureExtractor {
         /***Features of word***/
 
         //first word in sentence
-        if(position == 0)
-            features.add(new Pair("FIRST WORD", true));
+        if(position == 1)
+            features.add(new Pair("FIRST_WORD", true));
 
         //word itself
-        features.add(new Pair("WORD", word.toLowerCase()));
+        features.add(new Pair("WORD", word));
 
         //previous word
         if(position > 0) {
-            features.add(new Pair("i-1_WORD", sentence.get(position-1).getWord().toLowerCase()));
+            features.add(new Pair("i-1_WORD", sentence.get(position - 1).getWord()));
         }
 
         //pre previous word
         if(position - 1 > 0) {
-            features.add(new Pair("i-2_WORD", sentence.get(position-2).getWord().toLowerCase()));
+            features.add(new Pair("i-2_WORD", sentence.get(position - 2).getWord()));
         }
 
         //following word
         if(position < sentence.size() - 1) {
-            features.add(new Pair("i+1_WORD", sentence.get(position+1).getWord().toLowerCase()));
+            features.add(new Pair("i+1_WORD", sentence.get(position + 1).getWord()));
         }
 
         //word after following word
         if(position < sentence.size() - 2) {
-            features.add(new Pair("i+2_WORD", sentence.get(position+2).getWord().toLowerCase()));
+            features.add(new Pair("i+2_WORD", sentence.get(position + 2).getWord()));
         }
 
         //Last three letters of word
@@ -157,7 +162,7 @@ public class TwitterFeatureExtractor {
 
         /***Features of Labels***/
         /** NE for training**/
-        if(train) {
+        /*if(train) {
             //prevtag=='O' and current NE label is 'O'
             if ((position > 0 && sentence.get(position - 1).getNeTag().toUpperCase().equals("O")) && feature.getNeTag().toUpperCase().equals("O")) {
                 Pair<String, String> retweet = new Pair("NE_PREV+NE_CUR", "O");
@@ -184,7 +189,7 @@ public class TwitterFeatureExtractor {
                 features.add(ne_prePrev);
             }
 
-            /**Relations**/
+            *//**Relations**//*
             //beginning of NE group
             if(feature.getNeTag().toUpperCase().equals("B")) {
                 features.add(new Pair("BEGIN_NE_GROUP", true));
@@ -217,7 +222,12 @@ public class TwitterFeatureExtractor {
             }
 
 
-        }
+        }*
+        //POS tag of word combined with NE tag of preceding word
+        if(position > 0) {
+            features.add(new Pair("POS_TAG+NE_PREV", word + "_" + sentence.get(position-1).getNeTag()));
+        }/
+
         /**POS TAG **/
         features.add(new Pair("POS_TAG", feature.getPosTag()));
 
@@ -240,21 +250,30 @@ public class TwitterFeatureExtractor {
         //current chunk tag
         features.add(new Pair("CHUNK_TAG", feature.getChunkTag()));
 
-        //previous chunk tag
+
         if(position > 0) {
+            //previous chunk tag
             features.add(new Pair("i-1_CHUNK_TAG", sentence.get(position-1).getChunkTag()));
+
+            //i-1 Chunk tag + word
+            Pair<String, String> chunk_prev_word = new Pair("CHUNK_PREV+WORD", sentence.get(position - 1).getChunkTag().toUpperCase() + "_" + word);
+            features.add(chunk_prev_word);
         }
 
         //pre previous chunk tag
         if(position - 1 > 0) {
             features.add(new Pair("i-2_CHUNK_TAG", sentence.get(position-2).getChunkTag()));
+
+            //i-1 Chunk tag + i-2 Chunk tag
+            Pair<String, String> chunk_prePrev = new Pair("NE_PRE+NE_PREV", sentence.get(position - 1).getChunkTag().toUpperCase() + "_" + sentence.get(position - 2).getChunkTag().toUpperCase());
+            features.add(chunk_prePrev);
         }
 
         /**COMBOS**/
 
-        //POS tag of word combined with NE tag of preceding word
+        //POS tag of word combined with chunk tag of preceding word
         if(position > 0) {
-            features.add(new Pair("POS_TAG+NE_PREV", word + "_" + sentence.get(position-1).getNeTag()));
+            features.add(new Pair("POS_TAG+CHUNK_PREV", feature.getPosTag() + "_" + sentence.get(position-1).getChunkTag()));
         }
 
         return features;

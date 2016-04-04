@@ -12,14 +12,14 @@ import java.io.InputStream;
  * Created by User on 3/31/2016.
  */
 public class TwitterChunker {
+    private static final String TWITTER_CHUNKER_MODEL = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/models/twitter-en-chunker.bin";
 
     public static void main(String args[]) {
         InputStream modelIn = null;
         ChunkerModel model = null;
 
-        String train_file = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/Python/twitter-chunker.bin";
         try {
-            modelIn = new FileInputStream(train_file);
+            modelIn = new FileInputStream(TWITTER_CHUNKER_MODEL);
             model = new ChunkerModel(modelIn);
 
             /**testing model**/
@@ -52,6 +52,31 @@ public class TwitterChunker {
         } catch (IOException e) {
             // Model loading failed, handle the error
             e.printStackTrace();
+        } finally {
+            if (modelIn != null) {
+                try {
+                    modelIn.close();
+                } catch (IOException e) {
+                }
+            }
+        }
+    }
+
+    public static ChunkerME getChunkerModel() {
+        InputStream modelIn = null;
+        ChunkerModel model = null;
+
+        try {
+            modelIn = new FileInputStream(TWITTER_CHUNKER_MODEL);
+            model = new ChunkerModel(modelIn);
+
+            ChunkerME chunker = new ChunkerME(model);
+
+            return chunker;
+        } catch (IOException e) {
+            // Model loading failed, handle the error
+            e.printStackTrace();
+            return null;
         } finally {
             if (modelIn != null) {
                 try {
