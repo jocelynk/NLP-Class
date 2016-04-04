@@ -16,6 +16,11 @@ public class TwitterFeatureExtractor {
     //Todo: Add NE in terms of previous predicted
     //ToDo: Relation tagging between chunk tags
 
+    static final String START_TAG = "<S>";
+    static final String START_WORD = "<S>";
+    static final String STOP_TAG = "</S>";
+    static final String STOP_WORD = "</S>";
+
     //for all features need to append on label (B, I, O)
     public static void main(String args[]) {
 
@@ -35,6 +40,21 @@ public class TwitterFeatureExtractor {
         WordFeature feature = sentence.get(position);
         String word = feature.getWord();
         /***Features of word***/
+
+        if(word.equals(START_WORD) || word.equals(STOP_WORD)) {
+            features.add(new Pair("CHUNK_TAG", START_TAG));
+            features.add(new Pair("POS_TAG", START_TAG));
+            features.add(new Pair("NE_TAG", START_TAG));
+            return features;
+        }
+
+        if(word.equals(STOP_WORD)) {
+            features.add(new Pair("CHUNK_TAG", STOP_TAG));
+            features.add(new Pair("POS_TAG", STOP_TAG));
+            features.add(new Pair("NE_TAG", STOP_TAG));
+            return features;
+        }
+
 
         //first word in sentence
         if(position == 1)
