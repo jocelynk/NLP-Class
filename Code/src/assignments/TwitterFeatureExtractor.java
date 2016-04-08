@@ -13,15 +13,39 @@ import java.util.regex.Pattern;
  */
 public class TwitterFeatureExtractor {
 
-    //Todo: Add NE in terms of previous predicted
-    //ToDo: Relation tagging between chunk tags
+    //ToDo: Search in database for movies, names, music, etc
+    //ToDo: Days of week, month?
+
+    /*1 Saturday O ^ 2 MWE
+2 September O ^ 0 _
+3 18th O $ 2 MWE
+4 2010 O $ 5 _
+5 8pm O $ 6 _
+6 Hotel B N 7 _
+7 Elegante I ^ 8 MWE
+8 Steve B ^ 10 MWE
+9 " I , -1 _
+10 Stylez I ^ 0 _
+11 " I , -1 _
+12 A.K.A. O ~ -1 _
+13 Desperado B ^ 14 _
+14 Birthday O N 15 _
+15 Bash O N 0 _
+16 ! O , -1 _
+17 " O , -1 _
+18 Headrush O ^ 15 _
+19 in O P 0 _
+20 da O D 21 _
+21 building O N 19 _
+22 " O , -1 _*/
+    //Find Group of words, go up dependency tree
 
     static final String START_TAG = "<S>";
     static final String START_WORD = "<S>";
     static final String STOP_TAG = "</S>";
     static final String STOP_WORD = "</S>";
 
-    //for all features need to append on label (B, I, O)
+
     public static void main(String args[]) {
 
         System.out.println("" + true);
@@ -33,23 +57,22 @@ public class TwitterFeatureExtractor {
 
     }
 
-    public static List<Pair> extractFeatures(int position, List<WordFeature> sentence) {
+    public static List<Pair> extractFeatures(int position, List<WordFeature> sentence, boolean train) {
         List<Pair> features = new ArrayList<>();
         Pattern pattern;
         Matcher matcher;
-        WordFeature feature = position < sentence.size()? sentence.get(position) : null;
-        String word = feature == null? STOP_WORD : feature.getWord();
+        WordFeature feature = position < sentence.size() ? sentence.get(position) : null;
+        String word = feature == null ? STOP_WORD : feature.getWord();
+        Boolean START_STOP_INCLUDED = sentence.get(0).getWord().equals(START_WORD) ? true : false;
         /***Features of word***/
 
-        if(word.equals(START_WORD) || word.equals(STOP_WORD)) {
-            features.add(new Pair("CHUNK_TAG", START_TAG));
+        if (word.equals(START_WORD) || word.equals(STOP_WORD)) {
             features.add(new Pair("POS_TAG", START_TAG));
             features.add(new Pair("NE_TAG", START_TAG));
             return features;
         }
 
-        if(word.equals(STOP_WORD)) {
-            features.add(new Pair("CHUNK_TAG", STOP_TAG));
+        if (word.equals(STOP_WORD)) {
             features.add(new Pair("POS_TAG", STOP_TAG));
             features.add(new Pair("NE_TAG", STOP_TAG));
             return features;
@@ -57,29 +80,29 @@ public class TwitterFeatureExtractor {
 
 
         //first word in sentence
-        if(position == 1)
+        if (feature.getId() == 1)
             features.add(new Pair("FIRST_WORD", true));
 
         //word itself
         features.add(new Pair("WORD", word));
 
         //previous word
-        if(position > 0) {
+        if (position > 0) {
             features.add(new Pair("i-1_WORD", sentence.get(position - 1).getWord()));
         }
 
         //pre previous word
-        if(position - 1 > 0) {
+        if (position - 1 > 0) {
             features.add(new Pair("i-2_WORD", sentence.get(position - 2).getWord()));
         }
 
         //following word
-        if(position < sentence.size() - 1) {
+        if (position < sentence.size() - 1) {
             features.add(new Pair("i+1_WORD", sentence.get(position + 1).getWord()));
         }
 
         //word after following word
-        if(position < sentence.size() - 2) {
+        if (position < sentence.size() - 2) {
             features.add(new Pair("i+2_WORD", sentence.get(position + 2).getWord()));
         }
 
@@ -97,14 +120,14 @@ public class TwitterFeatureExtractor {
 
         //All punctuation, i.e. !!!! or , or .
         if (word.matches("^([^\\w\\d\\s]{2,})$")) {
-            Pair<String, Boolean> punct = new Pair("PCT", true);
+            Pair<String, String> punct = new Pair("PUCT", "ALLPUNC");
             features.add(punct);
         } else {
             pattern = Pattern.compile("[,.!:\\'\\\"&]");
             matcher = pattern.matcher(word);
             //contains punctuation other than ~
             if (word.length() > 1 && matcher.find()) {
-                Pair<String, Boolean> punct = new Pair("PCTINWORD", true);
+                Pair<String, String> punct = new Pair("PUCT", "PUNCTINWORD");
                 features.add(punct);
             }
         }
@@ -112,35 +135,50 @@ public class TwitterFeatureExtractor {
         //inline period
         pattern = Pattern.compile("[a-z][.][a-z]");
         matcher = pattern.matcher(word);
-        if (matcher.find()) {
-            Pair<String, Boolean> inline_period = new Pair("INLINE_PERIOD", true);
-            features.add(inline_period);
-        }
+        Pair<String, Boolean> inline_period;
+        if (matcher.find())
+            inline_period = new Pair("INLINE_PERIOD", true);
+        else
+            inline_period = new Pair("INLINE_PERIOD", false);
+        features.add(inline_period);
 
         //Hashtag
-        if (word.charAt(0) == '#') {
-            Pair<String, Boolean> hashTag = new Pair("HASHTAG", true);
-            features.add(hashTag);
-        }
+        Pair<String, Boolean> hashTag;
+        if (word.charAt(0) == '#')
+            hashTag = new Pair("HASHTAG", true);
+        else
+            hashTag = new Pair("HASHTAG", false);
+        features.add(hashTag);
+
         //Twitter Handle
-        if (word.charAt(0) == '@') {
-            Pair<String, Boolean> hashTag = new Pair("HANDLE", true);
-            features.add(hashTag);
-        }
+        Pair<String, Boolean> handle;
+        if (word.charAt(0) == '@')
+            handle = new Pair("HANDLE", true);
+        else
+            handle = new Pair("HANDLE", false);
+        features.add(handle);
+
 
         //URL
         pattern = Pattern.compile("^[(www)|(http)]");
         matcher = pattern.matcher(word);
-        if (matcher.find()) {
-            Pair<String, Boolean> url = new Pair("URL", true);
-            features.add(url);
-        }
+        Pair<String, Boolean> url;
+        if (matcher.find())
+            url = new Pair("URL", true);
+        else
+            url = new Pair("URL", false);
+
+        features.add(url);
 
         //Retweet
-        if (word.startsWith("RT")) {
-            Pair<String, Boolean> retweet = new Pair("RT", true);
-            features.add(retweet);
-        }
+        Pair<String, Boolean> retweet;
+        if (word.startsWith("RT"))
+            retweet = new Pair("RT", true);
+        else
+            retweet = new Pair("RT", false);
+
+        features.add(retweet);
+
 
         /**Capitalization**/
         /**change to if else? **/
@@ -155,38 +193,120 @@ public class TwitterFeatureExtractor {
         //Title
         pattern = Pattern.compile("^[A-Z][a-z]{0,}$");
         matcher = pattern.matcher(word);
-        if (matcher.find()) {
-            Pair<String, Boolean> title = new Pair("TITLE", true);
-            features.add(title);
-        }
+        Pair<String, Boolean> title;
+        if (matcher.find())
+            title = new Pair("TITLE", true);
+        else
+            title = new Pair("TITLE", false);
+        features.add(title);
+
 
         //Mixcase
         pattern = Pattern.compile("^[a-zA-Z]*(?:[a-z][A-Z]|[A-Z][a-z])[a-zA-Z]*");
         matcher = pattern.matcher(word);
+        Pair<String, Boolean> mixcase;
         if (matcher.find()) {
-            Pair<String, Boolean> mixcase = new Pair("MIXCASE", true);
-            features.add(mixcase);
-        }
+            mixcase = new Pair("MIXCASE", true);
+        } else
+            mixcase = new Pair("MIXCASE", false);
+
+        features.add(mixcase);
 
         //Initials
         pattern = Pattern.compile("^(?:[A-Z]{1}\\.{1}|[A-Z]{1}\\.{1}[A-Z]{1})+$");
         matcher = pattern.matcher(word);
-        if (matcher.find()) {
-            Pair<String, Boolean> initials = new Pair("INITIALS", true);
-            features.add(initials);
-        }
+        Pair<String, Boolean> initials;
+        if (matcher.find())
+            initials = new Pair("INITIALS", true);
+        else
+            initials = new Pair("INITIALS", false);
+
+        features.add(initials);
 
 
         //think more about Caps, all uppercase, mix, but what about words like INC. or U.K.
 
 
         /***Features of Labels***/
+
+        /**Dependency Features**/
+        //word is a root
+        Pair<String, Boolean> root;
+        if (feature.getHead() == 0)
+            root = new Pair("ROOT", true);
+        else
+            root = new Pair("ROOT", false);
+        features.add(root);
+
+        //word not included in dependency tree
+        Pair<String, Boolean> excluded;
+        if (feature.getHead() == -1)
+            excluded = new Pair("EXCLUDED", true);
+        else
+            excluded = new Pair("EXCLUDED", false);
+
+        features.add(excluded);
+
+        //Proper Noun
+        Pair<String, Boolean> properNoun;
+        if (feature.getPosTag().equals("^")) {
+            properNoun = new Pair("PROPER_NOUN", true);
+        } else
+            properNoun = new Pair("PROPER_NOUN", false);
+
+        features.add(properNoun);
+
+        //Noun
+        Pair<String, Boolean> noun;
+        if (feature.getPosTag().equals("N")) {
+            noun = new Pair("NOUN", true);
+        } else
+            noun = new Pair("NOUN", false);
+
+        features.add(noun);
+
+        //Dependency Tree POS relation
+        features.add(new Pair("POS_TAG", feature.getPosTag()));
+
+        //POSTag of head
+
+        if (feature.getHead() != -1 && feature.getHead() != 0) {
+            if (START_STOP_INCLUDED)
+                features.add(new Pair("POS_TAG_HEAD", sentence.get(feature.getHead()).getPosTag()));
+            else
+                features.add(new Pair("POS_TAG_HEAD", sentence.get(feature.getHead() - 1).getPosTag()));
+        }
+
+        //MWE
+        Pair<String, Boolean> mwe;
+        if(feature.getDepRelationship().equals("MWE") && (feature.getPosTag().equals("^") || feature.getPosTag().equals("N"))) {
+            mwe = new Pair("MWE_WITH_NOUN", true);
+        } else {
+            mwe = new Pair("MWE_WITH_NOUN", false);
+        }
+        features.add(mwe);
+
+        //need to possibly include prev head or id in extractFeatures function or would have to parse through whole tree
+
+
+        //CONJ
+        Pair<String, Boolean> conj;
+        if(feature.getDepRelationship().equals("CONJ") && (feature.getPosTag().equals("^") || feature.getPosTag().equals("N"))) {
+            conj = new Pair("CONJ_WITH_NOUN", true);
+        } else {
+            conj = new Pair("CONJ_WITH_NOUN", false);
+        }
+        features.add(conj);
+
+
+
+
         /** NE for training**/
-        /*if(train) {
+        /*if (train) {
             //prevtag=='O' and current NE label is 'O'
             if ((position > 0 && sentence.get(position - 1).getNeTag().toUpperCase().equals("O")) && feature.getNeTag().toUpperCase().equals("O")) {
-                Pair<String, String> retweet = new Pair("NE_PREV+NE_CUR", "O");
-                features.add(retweet);
+                Pair<String, String> ne_prev_ne_curr = new Pair("NE_PREV+NE_CUR", "O");
+                features.add(ne_prev_ne_curr);
             }
 
             if (position > 0) {
@@ -211,90 +331,60 @@ public class TwitterFeatureExtractor {
 
             *//**Relations**//*
             //beginning of NE group
-            if(feature.getNeTag().toUpperCase().equals("B")) {
+            if (feature.getNeTag().toUpperCase().equals("B")) {
                 features.add(new Pair("BEGIN_NE_GROUP", true));
             }
 
             //end of NE group
             boolean NE_END = true;
-            if(!feature.getNeTag().toUpperCase().equals("I")) {
+            if (!feature.getNeTag().toUpperCase().equals("I")) {
                 NE_END = false;
-            } else if(position < sentence.size() - 1 && sentence.get(position + 1).getNeTag().toUpperCase().equals("I")) {
+            } else if (position < sentence.size() - 1 && sentence.get(position + 1).getNeTag().toUpperCase().equals("I")) {
                 NE_END = false;
             }
 
-            if(NE_END) {
+            if (NE_END) {
                 features.add(new Pair("END_NE_GROUP", true));
             }
 
             //in between NE group
             boolean NE_BTWN = true;
-            if(!feature.getNeTag().toUpperCase().equals("I")) {
+            if (!feature.getNeTag().toUpperCase().equals("I")) {
                 NE_BTWN = false;
-            } else if(position == sentence.size() - 1 || position == 0) {
+            } else if (position == sentence.size() - 1 || position == 0) {
                 NE_BTWN = false;
-            } else if(!sentence.get(position + 1).getNeTag().toUpperCase().equals("I")) {
+            } else if (!sentence.get(position + 1).getNeTag().toUpperCase().equals("I")) {
                 NE_BTWN = false;
             }
 
-            if(NE_BTWN) {
+            if (NE_BTWN) {
                 features.add(new Pair("BTWN_NE_GROUP", true));
             }
 
+            //POS tag of word combined with NE tag of preceding word
+            if (position > 0) {
+                features.add(new Pair("POS_TAG+NE_PREV", word + "_" + sentence.get(position - 1).getNeTag()));
+            }
 
-        }*
-        //POS tag of word combined with NE tag of preceding word
-        if(position > 0) {
-            features.add(new Pair("POS_TAG+NE_PREV", word + "_" + sentence.get(position-1).getNeTag()));
-        }/
+        }*/
 
-        /**POS TAG **/
-        features.add(new Pair("POS_TAG", feature.getPosTag()));
 
+        /**TRIGRAM POS TAG **/
         //previous pos tag
-        if(position > 0) {
-            features.add(new Pair("i-1_POS_TAG", sentence.get(position-1).getPosTag()));
+        /*if (position > 0) {
+            features.add(new Pair("i-1_POS_TAG", sentence.get(position - 1).getPosTag()));
         }
 
         //pre previous pos tag
-        if(position - 1 > 0) {
-            features.add(new Pair("i-2_POS_TAG", sentence.get(position-2).getPosTag()));
+        if (position - 1 > 0) {
+            features.add(new Pair("i-2_POS_TAG", sentence.get(position - 2).getPosTag()));
         }
 
         //word + POS Tag of following word
-        if(position < sentence.size() - 1) {
-            features.add(new Pair("WORD+POS_TAG_+1", word + "_" + sentence.get(position+1).getPosTag()));
+        if (position < sentence.size() - 1) {
+            features.add(new Pair("WORD+POS_TAG_+1", word + "_" + sentence.get(position + 1).getPosTag()));
         }
-
-        /*Chunk Tags*/
-        //current chunk tag
-        features.add(new Pair("CHUNK_TAG", feature.getChunkTag()));
-
-
-        if(position > 0) {
-            //previous chunk tag
-            features.add(new Pair("i-1_CHUNK_TAG", sentence.get(position-1).getChunkTag()));
-
-            //i-1 Chunk tag + word
-            Pair<String, String> chunk_prev_word = new Pair("CHUNK_PREV+WORD", sentence.get(position - 1).getChunkTag().toUpperCase() + "_" + word);
-            features.add(chunk_prev_word);
-        }
-
-        //pre previous chunk tag
-        if(position - 1 > 0) {
-            features.add(new Pair("i-2_CHUNK_TAG", sentence.get(position-2).getChunkTag()));
-
-            //i-1 Chunk tag + i-2 Chunk tag
-            Pair<String, String> chunk_prePrev = new Pair("NE_PRE+NE_PREV", sentence.get(position - 1).getChunkTag().toUpperCase() + "_" + sentence.get(position - 2).getChunkTag().toUpperCase());
-            features.add(chunk_prePrev);
-        }
-
-        /**COMBOS**/
-
-        //POS tag of word combined with chunk tag of preceding word
-        if(position > 0) {
-            features.add(new Pair("POS_TAG+CHUNK_PREV", feature.getPosTag() + "_" + sentence.get(position-1).getChunkTag()));
-        }
+*/
 
         return features;
     }

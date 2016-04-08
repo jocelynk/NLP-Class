@@ -22,8 +22,10 @@ import util.WordFeature;
 public class NamedEntityExtractor {
     private static List<ArrayList<WordFeature>> trainingSet = new ArrayList<>();
     private static List<ArrayList<WordFeature>> testSet = new ArrayList<>();
-    private static final String TRAIN_FILE_NAME = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/data-raw/train.txt";
-    private static final String TEST_FILE_NAME = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/data-raw/dev1.txt";
+    private static final String TRAIN_FILE_NAME_RAW = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/data-raw/train.txt";
+    private static final String TEST_FILE_NAME_RAW = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/data-raw/dev1.txt";
+    private static final String TRAIN_FILE_NAME = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/data-prepared/train_tweebo_features.txt";
+    private static final String TEST_FILE_NAME = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/data-prepared/test_tweebo_features.txt";
     private static final String MAXENT_DATA = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/models/twitter-maxent-data.txt";
     private static final String MAXENT_MODEL = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/models/twitter-twitter-model.maxent.gz";
     private static MaxentModel maxentModel;
@@ -63,18 +65,18 @@ public class NamedEntityExtractor {
         try (BufferedReader br = new BufferedReader(new FileReader(TRAIN_FILE_NAME))) {
             String line = br.readLine();
             List<WordFeature> trainTweet = new ArrayList<>();
-            trainTweet.add(new WordFeature(START_WORD, START_TAG, START_TAG, START_TAG));
+            trainTweet.add(new WordFeature(-1, START_WORD, START_TAG, START_TAG, -1, null));
             while (line != null) {
                 if (line.length() < 1) {
                     //System.out.println("newline: " + line);
-                    trainTweet.add(new WordFeature(STOP_WORD, STOP_TAG, STOP_TAG, STOP_TAG));
+                    trainTweet.add(new WordFeature(-1, STOP_WORD, STOP_TAG, STOP_TAG, -1, null));
                     trainingSet.add(new ArrayList<>(trainTweet));
                     trainTweet = new ArrayList<>();
-                    trainTweet.add(new WordFeature(START_WORD, START_TAG, START_TAG, START_TAG));
+                    trainTweet.add(new WordFeature(-1, START_WORD, START_TAG, START_TAG, -1, null));
                 } else {
                     //System.out.println(line);
                     String[] wordPair = line.split("\\s+");
-                    WordFeature feature = new WordFeature(wordPair[0], null, null, wordPair[1]);
+                    WordFeature feature = new WordFeature(Integer.parseInt(wordPair[0]), wordPair[1], wordPair[2], wordPair[3], Integer.parseInt(wordPair[4]), wordPair[5]);
 
                     trainTweet.add(feature);
                 }
@@ -90,18 +92,18 @@ public class NamedEntityExtractor {
         try (BufferedReader br = new BufferedReader(new FileReader(TEST_FILE_NAME))) {
             String line = br.readLine();
             List<WordFeature> testTweet = new ArrayList<>();
-            testTweet.add(new WordFeature(START_WORD, START_TAG, START_TAG, START_TAG));
+            testTweet.add(new WordFeature(-1, START_WORD, START_TAG, START_TAG, -1, null));
             while (line != null) {
                 if (line.length() < 1) {
                     //System.out.println("newline: " + line);
-                    testTweet.add(new WordFeature(STOP_WORD, STOP_TAG, STOP_TAG, STOP_TAG));
+                    testTweet.add(new WordFeature(-1, STOP_WORD, STOP_TAG, STOP_TAG, -1, null));
                     testSet.add(new ArrayList<>(testTweet));
                     testTweet = new ArrayList<>();
-                    testTweet.add(new WordFeature(START_WORD, START_TAG, START_TAG, START_TAG));
+                    testTweet.add(new WordFeature(-1, START_WORD, START_TAG, START_TAG, -1, null));
                 } else {
                     //System.out.println(line);
                     String[] wordPair = line.split("\\s+");
-                    WordFeature feature = new WordFeature(wordPair[0], null, null, wordPair[1]);
+                    WordFeature feature = new WordFeature(Integer.parseInt(wordPair[0]), wordPair[1], wordPair[2], wordPair[3], Integer.parseInt(wordPair[4]), wordPair[5]);
 
                     testTweet.add(feature);
                 }
@@ -120,18 +122,18 @@ public class NamedEntityExtractor {
             String line = br.readLine();
             List<ArrayList<WordFeature>> tweets = new ArrayList<>();
             List<WordFeature> tweet = new ArrayList<>();
-            tweet.add(new WordFeature(START_WORD, START_TAG, START_TAG, START_TAG));
+            tweet.add(new WordFeature(-1, START_WORD, START_TAG, START_TAG, -1, null));
             while (line != null) {
                 if (line.length() < 1) {
                     //System.out.println("newline: " + line);
-                    tweet.add(new WordFeature(STOP_WORD, STOP_TAG, STOP_TAG, STOP_TAG));
+                    tweet.add(new WordFeature(-1, STOP_WORD, STOP_TAG, STOP_TAG, -1, null));
                     tweets.add(new ArrayList<>(tweet));
                     tweet = new ArrayList<>();
-                    tweet.add(new WordFeature(START_WORD, START_TAG, START_TAG, START_TAG));
+                    tweet.add(new WordFeature(-1, START_WORD, START_TAG, START_TAG, -1, null));
                 } else {
                     //System.out.println(line);
                     String[] wordPair = line.split("\\s+");
-                    WordFeature feature = new WordFeature(wordPair[0], null, null, wordPair[1]);
+                    WordFeature feature = new WordFeature(Integer.parseInt(wordPair[0]), wordPair[1], wordPair[2], wordPair[3], Integer.parseInt(wordPair[4]), wordPair[5]);
 
                     tweet.add(feature);
                 }
@@ -217,44 +219,6 @@ public class NamedEntityExtractor {
         }
     }
 
-    public static void chunkTagData() {
-        ChunkerME chunker = TwitterChunker.getChunkerModel();
-        for(ArrayList<WordFeature> sentence : trainingSet) {
-            String[] sent = new String[sentence.size()-2];
-            String[] pos = new String[sentence.size()-2];
-
-            for(int i = 1; i < sentence.size() - 1; i++) {
-                sent[i-1] = sentence.get(i).getWord();
-                pos[i-1] = sentence.get(i).getPosTag();
-            }
-
-            String tags[] = chunker.chunk(sent, pos);
-
-            for(int i = 0; i < tags.length; i++) {
-                sentence.get(i+1).setChunkTag(tags[i]);
-            }
-
-        }
-
-        for(ArrayList<WordFeature> sentence : testSet) {
-            String[] sent = new String[sentence.size()-2];
-            String[] pos = new String[sentence.size()-2];
-
-            for(int i = 1; i < sentence.size() - 1; i++) {
-                sent[i-1] = sentence.get(i).getWord();
-                pos[i-1] = sentence.get(i).getPosTag();
-            }
-
-            String tags[] = chunker.chunk(sent, pos);
-
-            for(int i = 0; i < tags.length; i++) {
-                sentence.get(i+1).setChunkTag(tags[i]);
-            }
-
-        }
-
-    }
-
     public static Boolean createMaxEntModel() {
         BufferedWriter bw = null;
         try{
@@ -274,18 +238,13 @@ public class NamedEntityExtractor {
                 for(int i = 0; i < sentence.size(); i++) {
                     StringBuilder line = new StringBuilder();
                     line.append(sentence.get(i).getNeTag() + " ");
-                    List<Pair> features = TwitterFeatureExtractor.extractFeatures(i, sentence);
+                    List<Pair> features = TwitterFeatureExtractor.extractFeatures(i, sentence, true);
                     int ind = 0;
                     for(Pair pair : features) {
                         line.append(pair.getFirst() + "=" + pair.getSecond());
                         if(ind != features.size()-1) {
                             line.append(" ");
                         }
-
-                        /*if(pair.getSecond() instanceof Boolean) {
-
-                        }*/
-
                     }
 
                     bw.write(line.toString() + "\n");
@@ -358,7 +317,7 @@ public class NamedEntityExtractor {
                 }
 
                 //build context
-                List<Pair> features = TwitterFeatureExtractor.extractFeatures(position, sentence);
+                List<Pair> features = TwitterFeatureExtractor.extractFeatures(position, sentence, false);
                 String[] context = new String[features.size()];
                 int ind = 0;
                 for(Pair pair : features) {
@@ -417,8 +376,7 @@ public class NamedEntityExtractor {
 
         splitData();
         //splitDataTrainOnly();
-        posTagData();
-        chunkTagData();
+        //posTagData();
 
        /* createMaxEnt();
         String[] context = {"WORD=</S>"};
@@ -428,11 +386,11 @@ public class NamedEntityExtractor {
         Boolean modelCreated = createMaxEntModel();
         if(modelCreated) {
             createMaxEnt();
+            //ViterbiDecoder2 decoder = new ViterbiDecoder2(maxentModel);
             double numTagsCorrect = 0;
             double numTags = 0;
             double numNETagsCorrect = 0;
             double numNETags = 0;
-            String labels[] = {"B", "I"};
             BufferedWriter bw = null;
             try{
 
@@ -445,6 +403,9 @@ public class NamedEntityExtractor {
                 FileWriter fw = new FileWriter(file);
                 bw = new BufferedWriter(fw);
                 for(ArrayList<WordFeature> sentence : testSet) {
+                    //sentence.remove(0);
+                    //sentence.remove(sentence.size()-1);
+                    //List<String> tags = decoder.decode(sentence);
                     List<String> tags = tag(sentence);
 
                     for(int i = 0; i < sentence.size(); i++) {

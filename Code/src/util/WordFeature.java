@@ -5,16 +5,29 @@ package util;
  */
 public class WordFeature {
     private static final long serialVersionUID = 1L;
+    Integer id;
     String word;
-    String posTag;
-    String chunkTag;
     String neTag;
+    String posTag;
+    Integer head;
+    String depRelationship;
 
-    public WordFeature(String word, String posTag, String chunkTag, String neTag) {
+    public WordFeature(Integer id, String word, String neTag, String posTag, Integer head, String depRelationship) {
+        this.id = id;
         this.word = word;
-        this.posTag = posTag;
-        this.chunkTag = chunkTag;
         this.neTag = neTag;
+        this.posTag = posTag;
+        this.head = head;
+        this.depRelationship = depRelationship;
+
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public String getWord() {
@@ -25,6 +38,14 @@ public class WordFeature {
         this.word = word;
     }
 
+    public String getNeTag() {
+        return neTag;
+    }
+
+    public void setNeTag(String neTag) {
+        this.neTag = neTag;
+    }
+
     public String getPosTag() {
         return posTag;
     }
@@ -33,20 +54,20 @@ public class WordFeature {
         this.posTag = posTag;
     }
 
-    public String getChunkTag() {
-        return chunkTag;
+    public Integer getHead() {
+        return head;
     }
 
-    public void setChunkTag(String chunkTag) {
-        this.chunkTag = chunkTag;
+    public void setHead(Integer head) {
+        this.head = head;
     }
 
-    public String getNeTag() {
-        return neTag;
+    public String getDepRelationship() {
+        return depRelationship;
     }
 
-    public void setNeTag(String neTag) {
-        this.neTag = neTag;
+    public void setDepRelationship(String depRelationship) {
+        this.depRelationship = depRelationship;
     }
 
     @Override
@@ -56,29 +77,37 @@ public class WordFeature {
 
         WordFeature that = (WordFeature) o;
 
+        if (id != null ? !id.equals(that.id) : that.id != null) return false;
         if (word != null ? !word.equals(that.word) : that.word != null) return false;
+        if (neTag != null ? !neTag.equals(that.neTag) : that.neTag != null) return false;
         if (posTag != null ? !posTag.equals(that.posTag) : that.posTag != null) return false;
-        if (chunkTag != null ? !chunkTag.equals(that.chunkTag) : that.chunkTag != null) return false;
-        return !(neTag != null ? !neTag.equals(that.neTag) : that.neTag != null);
+        if (head != null ? !head.equals(that.head) : that.head != null) return false;
+        return !(depRelationship != null ? !depRelationship.equals(that.depRelationship) : that.depRelationship != null);
 
     }
 
     @Override
     public int hashCode() {
-        int result = word != null ? word.hashCode() : 0;
-        result = 31 * result + (posTag != null ? posTag.hashCode() : 0);
-        result = 31 * result + (chunkTag != null ? chunkTag.hashCode() : 0);
+        int result = id != null ? id.hashCode() : 0;
+        result = 31 * result + (word != null ? word.hashCode() : 0);
         result = 31 * result + (neTag != null ? neTag.hashCode() : 0);
+        result = 31 * result + (posTag != null ? posTag.hashCode() : 0);
+        result = 31 * result + (head != null ? head.hashCode() : 0);
+        result = 31 * result + (depRelationship != null ? depRelationship.hashCode() : 0);
         return result;
     }
+
 
     @Override
     public String toString() {
         return "WordFeature{" +
-                "word='" + word + '\'' +
-                ", posTag='" + posTag + '\'' +
-                ", chunkTag='" + chunkTag + '\'' +
+                "id=" + id +
+                ", word='" + word + '\'' +
                 ", neTag='" + neTag + '\'' +
+                ", posTag='" + posTag + '\'' +
+                ", head=" + head +
+                ", depRelationship='" + depRelationship + '\'' +
                 '}';
     }
+
 }

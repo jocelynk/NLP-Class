@@ -27,3 +27,15 @@ opennlp ChunkerTrainerME -model twitter-en-chunker.bin -lang en -data pos_chunk_
 get features from chunker and postagger
 run maxent classifier
 use viterbi to find best tags
+
+
+Second attempt:
+
+Use http://www.cs.cmu.edu/~ark/TweetNLP/#pos to train the POS Tagger, find twitter chunker? 
+Use Tweebo dependency parser to get features http://www.cs.cmu.edu/~ark/TweetNLP/#tweeboparser_tweebank
+
+Possible Features
+MWE - and a ^ or N that depends on V or something else
+N vs ^ that depends on a V
+Tags of dependency heads
+Proper noun ^ that depends on determiner D
