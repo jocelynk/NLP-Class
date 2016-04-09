@@ -24,10 +24,12 @@ public class NamedEntityExtractor {
     private static List<ArrayList<WordFeature>> testSet = new ArrayList<>();
     private static final String TRAIN_FILE_NAME_RAW = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/data-raw/train.txt";
     private static final String TEST_FILE_NAME_RAW = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/data-raw/dev1.txt";
-    private static final String TRAIN_FILE_NAME = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/data-prepared/train_tweebo_features.txt";
-    private static final String TEST_FILE_NAME = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/data-prepared/test_tweebo_features.txt";
-    private static final String MAXENT_DATA = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/models/twitter-maxent-data.txt";
-    private static final String MAXENT_MODEL = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/models/twitter-twitter-model.maxent.gz";
+    private static final String TRAIN_FILE_NAME = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/data-prepared/kaggle_tweebo_train_features.txt";
+    private static final String TEST_FILE_NAME = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/data-prepared/kaggle_tweebo_test_features.txt";
+    private static final String MAXENT_DATA = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/models/twitter-maxent-data-train.txt";
+    private static final String CRF_TRAIN_DATA = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/models/kaggle-crf-data-train.txt";
+    private static final String CRF_TEST_DATA = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/models/kaggle-crf-data-test.txt";
+    private static final String MAXENT_MODEL = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/models/twitter-model.maxent.gz";
     private static MaxentModel maxentModel;
     static final String START_TAG = "<S>";
     static final String START_WORD = "<S>";
@@ -61,7 +63,7 @@ public class NamedEntityExtractor {
     }
 
     /**End Helpers**/
-    public static void splitData() {
+    public static void splitData(Boolean kaggle) {
         try (BufferedReader br = new BufferedReader(new FileReader(TRAIN_FILE_NAME))) {
             String line = br.readLine();
             List<WordFeature> trainTweet = new ArrayList<>();
@@ -103,7 +105,11 @@ public class NamedEntityExtractor {
                 } else {
                     //System.out.println(line);
                     String[] wordPair = line.split("\\s+");
-                    WordFeature feature = new WordFeature(Integer.parseInt(wordPair[0]), wordPair[1], wordPair[2], wordPair[3], Integer.parseInt(wordPair[4]), wordPair[5]);
+                    WordFeature feature = null;
+                    if(!kaggle)
+                        feature = new WordFeature(Integer.parseInt(wordPair[0]), wordPair[1], wordPair[2], wordPair[3], Integer.parseInt(wordPair[4]), wordPair[5]);
+                    else
+                        feature = new WordFeature(Integer.parseInt(wordPair[0]), wordPair[1], null, wordPair[2], Integer.parseInt(wordPair[3]), wordPair[4]);
 
                     testTweet.add(feature);
                 }
@@ -219,11 +225,12 @@ public class NamedEntityExtractor {
         }
     }
 
-    public static Boolean createMaxEntModel() {
+
+    public static Boolean createFeatures(String fileName, Boolean isTrain, Boolean isMaxEnt) {
         BufferedWriter bw = null;
         try{
 
-            File file = new File(MAXENT_DATA);
+            File file = new File(fileName);
 
             /* This logic will make sure that the file
             * gets created if it is not present at the
@@ -234,10 +241,12 @@ public class NamedEntityExtractor {
 
             FileWriter fw = new FileWriter(file);
             bw = new BufferedWriter(fw);
-            for(ArrayList<WordFeature> sentence : trainingSet) {
+            List<ArrayList<WordFeature>> list = isTrain? trainingSet : testSet;
+            for(ArrayList<WordFeature> sentence : list) {
                 for(int i = 0; i < sentence.size(); i++) {
                     StringBuilder line = new StringBuilder();
-                    line.append(sentence.get(i).getNeTag() + " ");
+                    if(isMaxEnt)
+                        line.append(sentence.get(i).getNeTag() + " ");
                     List<Pair> features = TwitterFeatureExtractor.extractFeatures(i, sentence, true);
                     int ind = 0;
                     for(Pair pair : features) {
@@ -247,11 +256,17 @@ public class NamedEntityExtractor {
                         }
                     }
 
+                    if(isTrain && !isMaxEnt)
+                        line.append(sentence.get(i).getNeTag() + " ");
+
                     bw.write(line.toString() + "\n");
                 }
             }
             System.out.println("File written Successfully");
-            return true;
+            if(isMaxEnt)
+                return true;
+            else
+                return false;
 
         }
         catch (IOException ioe) {
@@ -294,13 +309,6 @@ public class NamedEntityExtractor {
         DataReader modelReader = new PlainTextFileDataReader(decodedInputStream);
         maxentModel = new GISModelReader(modelReader).getModel();
 
-        // Now predicting the outcome using the loaded model
-        //String[] context = {"a=1", "b=0"};
-
-        /*String[] context = {"home", "pdiff=0.6875", "ptwins=0.5"};
-        double[] outcomeProbs = maxentModel.eval(context);
-        String outcome = maxentModel.getBestOutcome(outcomeProbs);
-*/
     }
 
     private static Trellis<State> buildTrellis(List<WordFeature> sentence) {
@@ -374,7 +382,8 @@ public class NamedEntityExtractor {
     //named entity
     public static void main(String args[]) throws IOException {
 
-        splitData();
+
+        splitData(true);
         //splitDataTrainOnly();
         //posTagData();
 
@@ -383,10 +392,10 @@ public class NamedEntityExtractor {
         double[] outcomeProbs = maxentModel.eval(context);
         String outcome = maxentModel.getBestOutcome(outcomeProbs);*/
 
-        Boolean modelCreated = createMaxEntModel();
-        if(modelCreated) {
+        Boolean featuresCreated = createFeatures(CRF_TEST_DATA, false, false);
+        //Boolean featuresCreated = createFeatures(MAXENT_DATA, true, true);
+        if(featuresCreated) {
             createMaxEnt();
-            //ViterbiDecoder2 decoder = new ViterbiDecoder2(maxentModel);
             double numTagsCorrect = 0;
             double numTags = 0;
             double numNETagsCorrect = 0;
@@ -394,7 +403,7 @@ public class NamedEntityExtractor {
             BufferedWriter bw = null;
             try{
 
-                File file = new File("C:/Users/User/Documents/Cornell/Courses/NLP/HW4/results/dev_result.txt");
+                File file = new File("C:/Users/User/Documents/Cornell/Courses/NLP/HW4/results/dev_result_maxent.txt");
 
                 if(!file.exists()) {
                     file.createNewFile();
@@ -403,9 +412,6 @@ public class NamedEntityExtractor {
                 FileWriter fw = new FileWriter(file);
                 bw = new BufferedWriter(fw);
                 for(ArrayList<WordFeature> sentence : testSet) {
-                    //sentence.remove(0);
-                    //sentence.remove(sentence.size()-1);
-                    //List<String> tags = decoder.decode(sentence);
                     List<String> tags = tag(sentence);
 
                     for(int i = 0; i < sentence.size(); i++) {
