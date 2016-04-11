@@ -24,12 +24,23 @@ public class NamedEntityExtractor {
     private static List<ArrayList<WordFeature>> testSet = new ArrayList<>();
     private static final String TRAIN_FILE_NAME_RAW = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/data-raw/train.txt";
     private static final String TEST_FILE_NAME_RAW = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/data-raw/dev1.txt";
-    private static final String TRAIN_FILE_NAME = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/data-prepared/kaggle_tweebo_train_features.txt";
-    private static final String TEST_FILE_NAME = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/data-prepared/kaggle_tweebo_test_features.txt";
     private static final String MAXENT_DATA = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/models/twitter-maxent-data-train.txt";
-    private static final String CRF_TRAIN_DATA = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/models/kaggle-crf-data-train.txt";
-    private static final String CRF_TEST_DATA = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/models/kaggle-crf-data-test.txt";
     private static final String MAXENT_MODEL = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/models/twitter-model.maxent.gz";
+
+    private static final String TRAIN_FILE_NAME = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/tweebo/inputs/train_processed.txt";
+    private static final String TEST_FILE_NAME = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/tweebo/inputs/test_processed.txt";
+    private static final String CRF_TRAIN_DATA = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/tweebo/features/train_crf_data.txt";
+    private static final String CRF_TEST_DATA = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/tweebo/features/test_crf_data.txt";
+
+
+    private static final String CV_TRAIN_DATA = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/tweebo/features/cv/train_cv_data.txt";
+    private static final String CV_TEST_DATA = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/tweebo/features/cv/test_cv_data.txt";
+    private static final String CV_TRAIN_LABELED = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/tweebo/features/cv/train_cv_labeled.txt";
+    private static final String CV_TEST_LABELED = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/tweebo/features/cv/test_cv_labeled.txt";
+
+    private static final String EXTRA_DATA = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/Python/extra_tweebo_features.txt";
+    private static final String EXTRA_CRF_DATA = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/Python/extra_crf.txt";
+
     private static MaxentModel maxentModel;
     static final String START_TAG = "<S>";
     static final String START_WORD = "<S>";
@@ -169,6 +180,63 @@ public class NamedEntityExtractor {
 
             System.out.println(trainingSet.size());
             System.out.println(testSet.size());
+            BufferedWriter bw_train = null;
+            BufferedWriter bw_test = null;
+            try{
+
+                File file1 = new File(CV_TRAIN_LABELED);
+                File file2 = new File(CV_TEST_LABELED);
+            /* This logic will make sure that the file
+            * gets created if it is not present at the
+            * specified location*/
+                if(!file1.exists()) {
+                    file1.createNewFile();
+                    file2.createNewFile();
+                }
+
+                FileWriter fw_train = new FileWriter(CV_TRAIN_LABELED);
+                FileWriter fw_test = new FileWriter(CV_TEST_LABELED);
+                bw_train = new BufferedWriter(fw_train);
+                bw_test = new BufferedWriter(fw_test);
+                for(ArrayList<WordFeature> sentence : trainingSet) {
+                    for(int i = 0; i < sentence.size(); i++) {
+                        String word = sentence.get(i).getWord();
+                        String ne = sentence.get(i).getNeTag();
+
+                        bw_train.write(word.trim() + "\t" + ne + "\n");
+                    }
+                    bw_train.write("\n");
+                }
+                System.out.println("Train Labeled File written Successfully");
+
+                for(ArrayList<WordFeature> sentence : testSet) {
+                    for(int i = 0; i < sentence.size(); i++) {
+                        String word = sentence.get(i).getWord();
+                        String ne = sentence.get(i).getNeTag();
+
+                        if(!word.trim().equals("<S>") && !word.trim().equals("</S>"))
+                            bw_test.write(word.trim() + "\t" + ne + "\n");
+                    }
+                    bw_test.write("\n");
+                }
+                System.out.println("Test Labeled File written Successfully");
+
+
+            }
+            catch (IOException ioe) {
+                ioe.printStackTrace();
+            }
+            finally
+            {
+                try{
+                    if(bw_train!=null)
+                        bw_train.close();
+                    if(bw_test!=null)
+                        bw_test.close();
+                }catch(Exception ex){
+                    System.out.println("Error in closing the BufferedWriter"+ex);
+                }
+            }
 
             /*for(int i = 0; i < trainingSet.size(); i++) {
                 ArrayList<String[]> sentence = trainingSet.get(i);
@@ -383,16 +451,20 @@ public class NamedEntityExtractor {
     public static void main(String args[]) throws IOException {
 
 
-        splitData(true);
-        //splitDataTrainOnly();
-        //posTagData();
 
-       /* createMaxEnt();
-        String[] context = {"WORD=</S>"};
-        double[] outcomeProbs = maxentModel.eval(context);
-        String outcome = maxentModel.getBestOutcome(outcomeProbs);*/
+        //CV
+        splitDataTrainOnly();
 
-        Boolean featuresCreated = createFeatures(CRF_TEST_DATA, false, false);
+        //Kaggle
+        //splitData(true);
+
+        //CV
+        Boolean featuresCreated = createFeatures(CV_TRAIN_DATA, true, false);
+        createFeatures(CV_TEST_DATA, false, false);
+
+        //Kaggle
+        //Boolean featuresCreated = createFeatures(CRF_TRAIN_DATA, true, false);
+        //createFeatures(CRF_TEST_DATA, false, false);
         //Boolean featuresCreated = createFeatures(MAXENT_DATA, true, true);
         if(featuresCreated) {
             createMaxEnt();

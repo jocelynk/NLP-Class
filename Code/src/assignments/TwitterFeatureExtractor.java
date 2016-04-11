@@ -7,16 +7,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 /**
  * Created by User on 4/1/2016.
  */
 public class TwitterFeatureExtractor {
 
-    //Todo: Search in database for movies, names, music, etc
+    //Todo: Search in database for movies, names, music, etc (Companies, products, brands, people, locations )
     //Todo: Days of week, month?
     //Todo: create file where emoticons aren't separate entities
     //Todo: model dependencies
+    //Todo: Number of inbound links
+    //Todo:
 
 
     static final String START_TAG = "<S>";

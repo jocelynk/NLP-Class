@@ -1,6 +1,7 @@
 .idea
 .ipynb_checkpoints
 Libraries
+alan_dictionaries
 *.iml
 *.class
 
