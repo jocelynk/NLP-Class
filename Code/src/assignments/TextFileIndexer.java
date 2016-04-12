@@ -3,21 +3,21 @@ package assignments;
 /**
  * Created by User on 4/11/2016.
  */
+import org.apache.lucene.analysis.core.KeywordAnalyzer;
+import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
-import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.*;
 import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.TopScoreDocCollector;
+import org.apache.lucene.search.*;
+import org.apache.lucene.search.spans.SpanMultiTermQueryWrapper;
+import org.apache.lucene.search.spans.SpanNearQuery;
+import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.util.Constants;
 //import org.apache.lucene.util.Version;
 //import java.nio.file.Path;
 
@@ -31,7 +31,7 @@ import java.util.ArrayList;
  */
 public class TextFileIndexer {
     private static StandardAnalyzer analyzer = new StandardAnalyzer();
-
+    //private static KeywordAnalyzer analyzer = new KeywordAnalyzer();
     private IndexWriter writer;
     private ArrayList<File> queue = new ArrayList<File>();
 
@@ -93,8 +93,29 @@ public class TextFileIndexer {
                 if (s.equalsIgnoreCase("q")) {
                     break;
                 }
-                Query q = new QueryParser("contents", analyzer).parse(s);
-                searcher.search(q, collector);
+
+                String[] words = s.split(" ");
+                if(words.length < 2) {
+                    Query q = new QueryParser("contents", analyzer).parse(s.toLowerCase() + "~");
+                    searcher.search(q, collector);
+                } else {
+                    SpanQuery[] clauses = new SpanQuery[words.length];
+                    int ind = 0;
+                    for (String word : words) {
+                        clauses[ind++] = new SpanMultiTermQueryWrapper(new FuzzyQuery(new Term("contents", word.toLowerCase())));
+                    }
+                    SpanNearQuery q = new SpanNearQuery(clauses, 0, true);
+                    searcher.search(q, collector);
+                }
+
+                //AnalyzingQueryParser???
+               /* QueryParser qp = new QueryParser("contents", analyzer);
+                qp.setDefaultOperator(QueryParser.Operator.AND);
+                Query q = qp.parse(s);*/
+
+               // Query q = new QueryParser("contents", analyzer).parse(s);
+
+
                 ScoreDoc[] hits = collector.topDocs().scoreDocs;
 
                 // 4. display results
@@ -112,20 +133,30 @@ public class TextFileIndexer {
 
     }
 
+    public StandardAnalyzer getAnalyzer() {
+        return analyzer;
+    }
+
+    /*public KeywordAnalyzer getAnalyzer() {
+        return analyzer;
+    }*/
+
     /**
      * Constructor
      * @param indexDir the name of the folder in which the index should be created
      * @throws java.io.IOException when exception creating index.
      */
-    TextFileIndexer(String indexDir) throws IOException {
+    public TextFileIndexer(String indexDir) throws IOException {
         // the boolean true parameter means to create a new index everytime,
         // potentially overwriting any existing files there.
         FSDirectory dir = FSDirectory.open(Paths.get(indexDir));
-
+        analyzer = new StandardAnalyzer();
 
         IndexWriterConfig config = new IndexWriterConfig(analyzer);
 
         writer = new IndexWriter(dir, config);
+
+        //analyzer = new KeywordAnalyzer();
     }
 
     /**

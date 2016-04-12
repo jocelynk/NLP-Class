@@ -47,6 +47,13 @@ public class NamedEntityExtractor {
     static final String STOP_TAG = "</S>";
     static final String STOP_WORD = "</S>";
 
+
+    //Lucene Indexer
+    static final String INDEX_DIRECTORY = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/lucene_indexer";
+    private static TextFileIndexer indexer  = null;
+    static final String FILE_DIRECTORY = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/lucene_files";
+
+
     /**Helpers**/
     //Durstenfeld shuffle
     private static void shuffleArray(int[] ar)
@@ -71,6 +78,20 @@ public class NamedEntityExtractor {
             return null;
         }
 
+    }
+
+    private static void initTextFileIndexer(boolean addFiles) throws IOException {
+
+        try {
+            indexer = new TextFileIndexer(INDEX_DIRECTORY);
+            if(addFiles)
+                indexer.indexFileOrDirectory(FILE_DIRECTORY);
+            indexer.closeIndex();
+
+        } catch (Exception ex) {
+            System.out.println("Cannot create index..." + ex.getMessage());
+            System.exit(-1);
+        }
     }
 
     /**End Helpers**/
@@ -310,12 +331,13 @@ public class NamedEntityExtractor {
             FileWriter fw = new FileWriter(file);
             bw = new BufferedWriter(fw);
             List<ArrayList<WordFeature>> list = isTrain? trainingSet : testSet;
+
             for(ArrayList<WordFeature> sentence : list) {
                 for(int i = 0; i < sentence.size(); i++) {
                     StringBuilder line = new StringBuilder();
                     if(isMaxEnt)
                         line.append(sentence.get(i).getNeTag() + " ");
-                    List<Pair> features = TwitterFeatureExtractor.extractFeatures(i, sentence, true);
+                    List<Pair> features = TwitterFeatureExtractor.extractFeatures(i, sentence, indexer, true);
                     int ind = 0;
                     for(Pair pair : features) {
                         line.append(pair.getFirst() + "=" + pair.getSecond());
@@ -393,7 +415,12 @@ public class NamedEntityExtractor {
                 }
 
                 //build context
-                List<Pair> features = TwitterFeatureExtractor.extractFeatures(position, sentence, false);
+                List<Pair> features = null;
+                try {
+                    features = TwitterFeatureExtractor.extractFeatures(position, sentence, indexer, false);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 String[] context = new String[features.size()];
                 int ind = 0;
                 for(Pair pair : features) {
@@ -459,13 +486,17 @@ public class NamedEntityExtractor {
         //splitData(true);
 
         //CV
+        initTextFileIndexer(false);
         Boolean featuresCreated = createFeatures(CV_TRAIN_DATA, true, false);
         createFeatures(CV_TEST_DATA, false, false);
 
         //Kaggle
-        //Boolean featuresCreated = createFeatures(CRF_TRAIN_DATA, true, false);
-        //createFeatures(CRF_TEST_DATA, false, false);
+       /* Boolean featuresCreated = createFeatures(CRF_TRAIN_DATA, true, false);
+        createFeatures(CRF_TEST_DATA, false, false);*/
+
+        //Maxent
         //Boolean featuresCreated = createFeatures(MAXENT_DATA, true, true);
+
         if(featuresCreated) {
             createMaxEnt();
             double numTagsCorrect = 0;

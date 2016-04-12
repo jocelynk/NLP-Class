@@ -4,6 +4,7 @@ import opennlp.model.MaxentModel;
 import util.Pair;
 import util.WordFeature;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,7 +33,12 @@ public class ViterbiDecoder2 {
             // calculate posterior probability by maximum entropy
 
             //build context
-            List<Pair> features = TwitterFeatureExtractor.extractFeatures(0, sentence, false);
+            List<Pair> features = null;
+            try {
+                features = TwitterFeatureExtractor.extractFeatures(0, sentence, null, false);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             String[] context = new String[features.size()];
             int ind = 0;
             for(Pair pair : features) {
@@ -65,7 +71,12 @@ public class ViterbiDecoder2 {
                     // build features
 
                     //build context
-                    List<Pair> features = TwitterFeatureExtractor.extractFeatures(t, sentence, false);
+                    List<Pair> features = null;
+                    try {
+                        features = TwitterFeatureExtractor.extractFeatures(t, sentence, null, false);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                     String[] context = new String[features.size()];
                     int ind = 0;
                     for(Pair pair : features) {
