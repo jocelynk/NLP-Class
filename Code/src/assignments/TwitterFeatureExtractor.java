@@ -13,11 +13,7 @@ import org.apache.lucene.store.FSDirectory;
 import util.Pair;
 import util.WordFeature;
 
-import javax.security.auth.callback.TextInputCallback;
-import javax.xml.soap.Text;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -288,6 +284,13 @@ public class TwitterFeatureExtractor {
         } else
             features.add(new Pair("NOUN", false));
 
+
+        //Noun
+        if (feature.getPosTag().equals("A")) {
+            features.add(new Pair("ADJ", true));
+        } else
+            features.add(new Pair("ADJ", false));
+
         //Dependency Tree POS relation
         features.add(new Pair("POS_TAG", feature.getPosTag()));
 
@@ -442,6 +445,25 @@ public class TwitterFeatureExtractor {
             features.add(new Pair("WORD+POS_TAG_+1", word + "_" + sentence.get(position + 1).getPosTag()));
         }
 
+        //No. of inbounds
+        int inBounds = 0;
+        int featureHead = START_STOP_INCLUDED ? feature.getHead() : feature.getHead() - 1;
+        int previousHead = -1;
+        while(featureHead != 0 && featureHead != -1) {
+            int nextFeatureHead = START_STOP_INCLUDED ? sentence.get(featureHead).getHead() : (sentence.get(featureHead).getHead() - 1);
+            if(featureHead == nextFeatureHead)
+                break;
+            if(previousHead == nextFeatureHead)
+                break;
+            previousHead = featureHead;
+            featureHead = nextFeatureHead;
+            inBounds++;
+        }
+
+        features.add(new Pair("NO_INBOUNDS", inBounds));
+
+
+
         //Word In Dictionary
         if(feature.getPosTag().equals("^") || feature.getPosTag().equals("N")) {
             List<String> ngrams = createNGrams(position, sentence, 3, START_STOP_INCLUDED ? 1 : 0);
@@ -461,7 +483,9 @@ public class TwitterFeatureExtractor {
             if(longestGramLength > 0) {
                 //System.out.println(longestGram);
                 features.add(new Pair<>("IN_NAMED_ENTITY_DICT", true));
-                features.add(new Pair<>("LENGTH_GRAM_IN_DICT", longestGramLength));
+                //features.add(new Pair<>("LENGTH_GRAM_IN_DICT", longestGramLength));
+            } else {
+                features.add(new Pair<>("IN_NAMED_ENTITY_DICT", false));
             }
         }
 

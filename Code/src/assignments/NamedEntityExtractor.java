@@ -27,7 +27,7 @@ public class NamedEntityExtractor {
     private static final String MAXENT_DATA = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/models/twitter-maxent-data-train.txt";
     private static final String MAXENT_MODEL = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/models/twitter-model.maxent.gz";
 
-    private static final String TRAIN_FILE_NAME = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/tweebo/inputs/train_processed.txt";
+    private static final String TRAIN_FILE_NAME = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/tweebo/inputs/train_processed_testing.txt";
     private static final String TEST_FILE_NAME = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/tweebo/inputs/test_processed.txt";
     private static final String CRF_TRAIN_DATA = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/tweebo/features/train_crf_data.txt";
     private static final String CRF_TEST_DATA = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/tweebo/features/test_crf_data.txt";
@@ -491,7 +491,7 @@ public class NamedEntityExtractor {
         createFeatures(CV_TEST_DATA, false, false);
 
         //Kaggle
-       /* Boolean featuresCreated = createFeatures(CRF_TRAIN_DATA, true, false);
+        /*Boolean featuresCreated = createFeatures(CRF_TRAIN_DATA, true, false);
         createFeatures(CRF_TEST_DATA, false, false);*/
 
         //Maxent
