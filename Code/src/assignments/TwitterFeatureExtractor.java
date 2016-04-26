@@ -16,11 +16,12 @@ import util.WordFeature;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 /**
- * Created by User on 4/1/2016.
+ * Created by Jocelyn on 4/1/2016.
  */
 public class TwitterFeatureExtractor {
 
@@ -40,6 +41,9 @@ public class TwitterFeatureExtractor {
     static final String STOP_TAG = "</S>";
     static final String STOP_WORD = "</S>";
     static final String INDEX_DIRECTORY = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/lucene_indexer";
+    static final List<String> posTagsExclude = Arrays.asList("#", "@", "~", "U", "E", "$", ",", "#", "D", "P", "&", "T", "X", "Y", "R", "!", "O", "G");
+    static final List<String> posTagsInclude = Arrays.asList("N", "^", "D", "A", "P", "R");
+
 
     private static String indexLocation = INDEX_DIRECTORY;
     private static TextFileIndexer indexer = null;
@@ -49,11 +53,6 @@ public class TwitterFeatureExtractor {
     public static void main(String args[]) {
 
         System.out.println("" + true);
-        /*Pattern punctuationPattern = Pattern.compile("[\\w,.!:\\'\\\"&]{2,}");
-        Matcher m = punctuationPattern.matcher("''");
-        if(m.find()) {
-            System.out.println("matches");
-        }*/
 
     }
 
@@ -65,6 +64,20 @@ public class TwitterFeatureExtractor {
         WordFeature feature = position < sentence.size() ? sentence.get(position) : null;
         String word = feature == null ? STOP_WORD : feature.getWord();
         Boolean START_STOP_INCLUDED = sentence.get(0).getWord().equals(START_WORD) ? true : false;
+        String previousWord = "";
+        String followingWord = "";
+        if(START_STOP_INCLUDED) {
+            if(position > 1)
+                previousWord = sentence.get(position-1).getWord();
+            if(position < sentence.size() -1 )
+                followingWord = sentence.get(position+1).getWord();
+        } else {
+            if(position > 0)
+                previousWord = sentence.get(position-1).getWord();
+            if(position < sentence.size())
+                followingWord = sentence.get(position+1).getWord();
+        }
+
         /***Features of word***/
 
         if (word.equals(START_WORD) || word.equals(STOP_WORD)) {
@@ -87,6 +100,9 @@ public class TwitterFeatureExtractor {
         //word itself
         features.add(new Pair("WORD", word));
 
+        //word lower
+        features.add(new Pair("WORDLOWER", word.toLowerCase()));
+
         //previous word
         if (position > 0) {
             features.add(new Pair("i-1_WORD", sentence.get(position - 1).getWord()));
@@ -107,15 +123,31 @@ public class TwitterFeatureExtractor {
             features.add(new Pair("i+2_WORD", sentence.get(position + 2).getWord()));
         }
 
-        //Last three letters of word
+        //Suffix
+        if (word.length() > 4) {
+            Pair<String, String> suffix = new Pair("SUFFIX-4", word.substring(word.length() - 4).toLowerCase());
+            features.add(suffix);
+        }
         if (word.length() > 3) {
-            Pair<String, String> suffix = new Pair("SUFFIX", word.substring(word.length() - 3).toLowerCase());
+            Pair<String, String> suffix = new Pair("SUFFIX-3", word.substring(word.length() - 3).toLowerCase());
+            features.add(suffix);
+        }
+        if (word.length() > 2) {
+            Pair<String, String> suffix = new Pair("SUFFIX-2", word.substring(word.length() - 2).toLowerCase());
             features.add(suffix);
         }
 
-        //First three letters of word
+        //Prefix
+        if (word.length() > 4) {
+            Pair<String, String> prefix = new Pair("PREFIX-4", word.substring(0, 5).toLowerCase());
+            features.add(prefix);
+        }
         if (word.length() > 3) {
-            Pair<String, String> prefix = new Pair("PREFIX", word.substring(0, 4).toLowerCase());
+            Pair<String, String> prefix = new Pair("PREFIX-3", word.substring(0, 4).toLowerCase());
+            features.add(prefix);
+        }
+        if (word.length() > 2) {
+            Pair<String, String> prefix = new Pair("PREFIX-2", word.substring(0, 3).toLowerCase());
             features.add(prefix);
         }
 
@@ -228,6 +260,24 @@ public class TwitterFeatureExtractor {
             features.add(allCaps);
         }
 
+        if(previousWord.length() > 0) {
+            matcher = pattern.matcher(previousWord);
+            if (matcher.find()) {
+                Pair<String, Boolean> allCaps = new Pair("WORD-1+ALLCAPS", true);
+                features.add(allCaps);
+            }
+
+        }
+
+        if(followingWord.length() > 0) {
+            matcher = pattern.matcher(previousWord);
+            if (matcher.find()) {
+                Pair<String, Boolean> allCaps = new Pair("WORD+1+ALLCAPS", true);
+                features.add(allCaps);
+            }
+
+        }
+
         //Title
         pattern = Pattern.compile("^[A-Z][a-z]{0,}$");
         matcher = pattern.matcher(word);
@@ -235,6 +285,24 @@ public class TwitterFeatureExtractor {
             features.add(new Pair("TITLE", true));
         else
             features.add(new Pair("TITLE", false));
+
+        if(previousWord.length() > 0) {
+            matcher = pattern.matcher(word);
+            if (matcher.find())
+                features.add(new Pair("WORD-1+TITLE", true));
+            else
+                features.add(new Pair("WORD-1+TITLE", false));
+
+        }
+
+        if(followingWord.length() > 0) {
+            matcher = pattern.matcher(word);
+            if (matcher.find())
+                features.add(new Pair("WORD+1+TITLE", true));
+            else
+                features.add(new Pair("WORD+1+TITLE", false));
+
+        }
 
         //Mixcase
         pattern = Pattern.compile("^[a-zA-Z]*(?:[a-z][A-Z]|[A-Z][a-z])[a-zA-Z]*");
@@ -254,7 +322,13 @@ public class TwitterFeatureExtractor {
         else
             features.add(new Pair("INITIALS", false));
 
-        //think more about Caps, all uppercase, mix, but what about words like INC. or U.K.
+        // Nominalization suffixes
+        pattern = Pattern.compile("(ings?|ions?|ments?|nces?)$");
+        matcher = pattern.matcher(word);
+        if (matcher.find())
+            features.add(new Pair("NOMINALIZATION", true));
+        else
+            features.add(new Pair("NOMINALIZATION", false));
 
 
         /***Features of Labels***/
@@ -285,11 +359,11 @@ public class TwitterFeatureExtractor {
             features.add(new Pair("NOUN", false));
 
 
-        //Noun
+       /* //Adjective
         if (feature.getPosTag().equals("A")) {
             features.add(new Pair("ADJ", true));
         } else
-            features.add(new Pair("ADJ", false));
+            features.add(new Pair("ADJ", false));*/
 
         //Dependency Tree POS relation
         features.add(new Pair("POS_TAG", feature.getPosTag()));
@@ -301,14 +375,6 @@ public class TwitterFeatureExtractor {
             else
                 features.add(new Pair("POS_TAG_HEAD", sentence.get(feature.getHead() - 1).getPosTag()));
         }
-
-       /* //Word of head
-        if (feature.getHead() != -1 && feature.getHead() != 0) {
-            if (START_STOP_INCLUDED)
-                features.add(new Pair("POS_TAG_HEAD_WORD", sentence.get(feature.getHead()).getWord()));
-            else
-                features.add(new Pair("POS_TAG_HEAD_WORD", sentence.get(feature.getHead() - 1).getWord()));
-        }*/
 
         //MWE
         if (feature.getDepRelationship().equals("MWE") && (feature.getPosTag().equals("^") || feature.getPosTag().equals("N"))) {
@@ -446,7 +512,7 @@ public class TwitterFeatureExtractor {
         }
 
         //No. of inbounds
-        int inBounds = 0;
+        /*int inBounds = 0;
         int featureHead = START_STOP_INCLUDED ? feature.getHead() : feature.getHead() - 1;
         int previousHead = -1;
         while(featureHead != 0 && featureHead != -1) {
@@ -461,32 +527,39 @@ public class TwitterFeatureExtractor {
         }
 
         features.add(new Pair("NO_INBOUNDS", inBounds));
-
+*/
 
 
         //Word In Dictionary
-        if(feature.getPosTag().equals("^") || feature.getPosTag().equals("N")) {
-            List<String> ngrams = createNGrams(position, sentence, 3, START_STOP_INCLUDED ? 1 : 0);
+        if(!posTagsExclude.contains(feature.getPosTag())) {
+            List<String> ngrams = createNGrams(position, sentence, 2, START_STOP_INCLUDED ? 1 : 0);
             int longestGramLength = 0;
-            String longestGram = "";
             for(String gram : ngrams) {
                 if(gram.indexOf("*") < 0 && gram.indexOf("?") < 0) {
-                    if (findInDictionary(gram)) {
-                        if(gram.length() > longestGramLength) {
-                            longestGramLength = gram.length();
-                            longestGram = gram;
+
+                    List<String> files = findInDictionary(gram);
+                    for(String f : files) {
+                        features.add(new Pair<>("DICT", f));
+                        int gramLength = gram.split(" ").length;
+                        if(gramLength > 1) {
+                            features.add(new Pair<>("DICTWIN", gramLength));
                         }
                     }
+                    /*if (findInDictionary(gram)) {
+                        if(gram.length() > longestGramLength) {
+                            longestGramLength = gram.length();
+                        }
+                    }*/
                 }
             }
 
-            if(longestGramLength > 0) {
+           /* if(longestGramLength > 0) {
                 //System.out.println(longestGram);
                 features.add(new Pair<>("IN_NAMED_ENTITY_DICT", true));
                 //features.add(new Pair<>("LENGTH_GRAM_IN_DICT", longestGramLength));
             } else {
                 features.add(new Pair<>("IN_NAMED_ENTITY_DICT", false));
-            }
+            }*/
         }
 
 
@@ -501,26 +574,28 @@ public class TwitterFeatureExtractor {
         int end = position + n < sentence.size() ? (position + n): sentence.size() - 1 - startStopExtra;
 
         for(int i = beginning; i <= position; i++) {
-            if(sentence.get(i).getPosTag().equals("N") || sentence.get(i).getPosTag().equals("^")) {
-                for (int j = 0; j <= end - position; j++) {
-                    StringBuilder ngram = new StringBuilder();
-                    for (int k = i; k <= end - j; k++) {
-                        String word = sentence.get(k).getWord().replaceAll("[^a-zA-Z0-9\\-\\_\\']", " ").trim();
-                        if(word.length() > 0)
-                            ngram.append(word.trim() + " ");
-                    }
-                    result.add(ngram.toString().trim());
+           if(posTagsInclude.contains(sentence.get(i).getPosTag())) {
+            for (int j = 0; j <= end - position; j++) {
+                StringBuilder ngram = new StringBuilder();
+                for (int k = i; k <= end - j; k++) {
+                    String word = sentence.get(k).getWord().replaceAll("[^a-zA-Z0-9\\-\\_\\']", " ").trim();
+                    if(word.length() > 0)
+                        ngram.append(word.trim() + " ");
                 }
+                String finalWord = ngram.toString().trim();
+                if(!result.contains(finalWord))
+                    result.add(ngram.toString().trim());
             }
+           }
         }
 
         return result;
     }
 
     //Do I need to do exact match?
-    private static Boolean findInDictionary(String word) throws IOException {
+    private static List<String> findInDictionary(String word) throws IOException {
 
-
+        List<String> files = new ArrayList<>();
         //=========================================================
         // Now search
         //=========================================================
@@ -529,7 +604,7 @@ public class TwitterFeatureExtractor {
 
 
             try {
-                TopScoreDocCollector collector = TopScoreDocCollector.create(10);
+                TopScoreDocCollector collector = TopScoreDocCollector.create(3);
 
                 PhraseQuery.Builder builder = new PhraseQuery.Builder();
 
@@ -554,94 +629,40 @@ public class TwitterFeatureExtractor {
                 //System.out.println(word);
                 //System.out.println("Found " + hits.length + " hits.");
                 String nonEntityWords[] = {"english.stop", "lower.10000", "wnAllSensesAreEvents", "wnPrimSenseIsEvent", "wnSomeSensesAreEvents"};
+//                for(int i=0;i<hits.length;++i) {
+//                    int docId = hits[i].doc;
+//                    Document d = searcher.doc(docId);
+//                    String path = d.get("path");
+//                    for(String fileName : nonEntityWords) {
+//                        if(path.indexOf(fileName) > -1) {
+//                            //System.out.println("Non Entity Word");
+//                            return false;
+//                        }
+//                    }
+//                    //System.out.println((i + 1) + ". " + d.get("path") + " score=" + hits[i].score);
+//                }
+
                 for(int i=0;i<hits.length;++i) {
                     int docId = hits[i].doc;
                     Document d = searcher.doc(docId);
-                    String path = d.get("path");
-                    for(String fileName : nonEntityWords) {
-                        if(path.indexOf(fileName) > -1) {
-                            //System.out.println("Non Entity Word");
-                            return false;
-                        }
-                    }
+                    String filename = d.get("filename");
+                    files.add(filename);
                     //System.out.println((i + 1) + ". " + d.get("path") + " score=" + hits[i].score);
                 }
 
 
-                if(hits.length > 1)
+                return files;
+                /*if(hits.length > 1)
                     return true;
                 else
-                    return false;
+                    return false;*/
                 // 4. display results
 
 
             } catch (Exception e) {
                 System.out.println("Error searching " + word + " : " + e.getMessage());
-                return false;
+                return files;
             }
     }
-
-    /*
-
-        features.incrementCount("i tag+i-2 tag" + previousTag + prePreviousTag, 1);
-        features.incrementCount("i-1 tag+i word" + previousTag + context.get(position), 1);
-        //need to make sure to add start and end to context
-
-
-    /*SMALL = 'a|an|and|as|at|but|by|en|for|if|in|of|on|or|the|to|v\.?|via|vs\.?'
-    PUNCT = r"""!"#$%&'�()*+,\-./:;?@[\\\]_`{|}~"""
-
-    SMALL_WORDS = re.compile(r'^(%s)$' % SMALL, re.I)
-    INLINE_PERIOD = re.compile(r'[a-z][.][a-z]', re.I)
-    UC_ELSEWHERE = re.compile(r'[%s]*?[a-zA-Z]+[A-Z]+?' % PUNCT)
-    CAPFIRST = re.compile(r"^[%s]*?([A-Za-z])" % PUNCT)
-    SMALL_FIRST = re.compile(r'^([%s]*)(%s)\b' % (PUNCT, SMALL), re.I)
-    SMALL_LAST = re.compile(r'\b(%s)[%s]?$' % (SMALL, PUNCT), re.I)
-    SUBPHRASE = re.compile(r'([:.;?!\-\�][ ])(%s)' % SMALL)
-    APOS_SECOND = re.compile(r"^[dol]{1}['�]{1}[a-z]+(?:['s]{2})?$", re.I)
-    ALL_CAPS = re.compile(r'^[A-Z\s\d%s]+$' % PUNCT)
-    UC_INITIALS = re.compile(r"^(?:[A-Z]{1}\.{1}|[A-Z]{1}\.{1}[A-Z]{1})+$")
-    MAC_MC = re.compile(r"^([Mm]c)(\w.+)")*/
-
-
-    /*
-    10.125 bias==True and label is 'O'
-    6.631 suffix3=='day' and label is 'O'
-    -6.207 bias==True and label is 'I-GSP'
-    5.628 prevtag=='O' and label is 'O'
-    -4.740 shape=='upcase' and label is 'O'
-    4.106 shape+prevtag=='+O' and label is 'O'
-    -3.994 shape=='mixedcase' and label is 'O'
-    3.992 pos+prevtag=='NNP+B-PERSON' and label is 'I-PERSON'
-    3.890 prevtag=='I-ORGANIZATION' and label is 'I-ORGANIZATION'
-    3.879 shape+prevtag=='+I-ORGANIZATION' and label is 'I-ORGANIZATION'*/
-
-    /*The shape of the word (e.g., does it contain numbers? does it begin with a capital letter?)
-    The length of the word
-
-    The POS tag of the word
-    The word itself
-    Does the word exist in an English dictionary?
-    The tag of the word that precedes this word (i.e., was the previous word identified as a NE)
-    The POS tag of the preceding word
-    The POS tag of the following word
-    The word that precedes this word
-    The word that follows this word
-    The word combined with the POS tag of the following word
-    The POS tag of the word combined with the tag of the preceding word
-    The shape of the word combined with the tag of the preceding word*/
-
-    /*tokens = r"""(?x)      # set flag to allow verbose regexps "
-     http://[^ ]+       #urls
-   | \@[^ ]+            # Twitter usernames
-   | \#[^ ]+            # Twitter hashtags
-   | [A-Z]([A-Z]|\.|&)+        # abbreviations, e.g. U.S.A., AT&T
-   | \w+(-\w+)*        # words with optional internal hyphens
-   | \$?\d+(\.\d+)?%?  # currency and percentages, e.g. $12.40, 82%
-   | \.\.\.            # ellipsis
-   | \'s                # various things
-   | \'t
-   | n\'t
-   | [][.,;"'?():-_`]  # these are separate tokens*/
 
 }

@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Created by User on 3/31/2016.
+ * Created by Jocelyn on 3/31/2016.
  */
 public class TwitterChunker {
     private static final String TWITTER_CHUNKER_MODEL = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/models/twitter-en-chunker.bin";

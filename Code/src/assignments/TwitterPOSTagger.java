@@ -11,7 +11,7 @@ import java.io.InputStream;
 import java.util.List;
 
 /**
- * Created by User on 4/1/2016.
+ * Created by Jocelyn on 4/1/2016.
  */
 public class TwitterPOSTagger {
     private static final String TWITTER_MODEL_MAXENT = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/models/twitter-en-pos-maxent.bin";

@@ -17,7 +17,7 @@ import util.Trellis;
 import util.WordFeature;
 
 /**
- * Created by User on 3/22/2016.
+ * Created by Jocelyn on 3/22/2016.
  */
 public class NamedEntityExtractor {
     private static List<ArrayList<WordFeature>> trainingSet = new ArrayList<>();
@@ -28,7 +28,9 @@ public class NamedEntityExtractor {
     private static final String MAXENT_MODEL = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/models/twitter-model.maxent.gz";
 
     private static final String TRAIN_FILE_NAME = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/tweebo/inputs/train_processed_testing.txt";
-    private static final String TEST_FILE_NAME = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/tweebo/inputs/test_processed.txt";
+    //private static final String TEST_FILE_NAME = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/tweebo/inputs/test_processed.txt";
+    private static final String TEST_FILE_NAME = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/tweebo/inputs/test.nolabels.processed.txt";
+
     private static final String CRF_TRAIN_DATA = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/tweebo/features/train_crf_data.txt";
     private static final String CRF_TEST_DATA = "C:/Users/User/Documents/Cornell/Courses/NLP/HW4/tweebo/features/test_crf_data.txt";
 
@@ -480,19 +482,20 @@ public class NamedEntityExtractor {
 
 
         //CV
-        splitDataTrainOnly();
+        //splitDataTrainOnly();
 
         //Kaggle
-        //splitData(true);
+        splitData(true);
 
         //CV
-        initTextFileIndexer(false);
+        /*initTextFileIndexer(false);
         Boolean featuresCreated = createFeatures(CV_TRAIN_DATA, true, false);
-        createFeatures(CV_TEST_DATA, false, false);
+        createFeatures(CV_TEST_DATA, false, false);*/
 
         //Kaggle
-        /*Boolean featuresCreated = createFeatures(CRF_TRAIN_DATA, true, false);
-        createFeatures(CRF_TEST_DATA, false, false);*/
+        initTextFileIndexer(false);
+        Boolean featuresCreated = createFeatures(CRF_TRAIN_DATA, true, false);
+        createFeatures(CRF_TEST_DATA, false, false);
 
         //Maxent
         //Boolean featuresCreated = createFeatures(MAXENT_DATA, true, true);

@@ -1,7 +1,7 @@
 package assignments;
 
 /**
- * Created by User on 4/11/2016.
+ * Created by Jocelyn on 4/11/2016.
  */
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.search.PhraseQuery;
@@ -123,7 +123,7 @@ public class TextFileIndexer {
                 for(int i=0;i<hits.length;++i) {
                     int docId = hits[i].doc;
                     Document d = searcher.doc(docId);
-                    System.out.println((i + 1) + ". " + d.get("path") + " score=" + hits[i].score);
+                    System.out.println((i + 1) + ". " + d.get("filename") + " score=" + hits[i].score);
                 }
 
             } catch (Exception e) {
@@ -183,6 +183,7 @@ public class TextFileIndexer {
                 //===================================================
                 fr = new FileReader(f);
                 doc.add(new TextField("contents", fr));
+
                 doc.add(new StringField("path", f.getPath(), Field.Store.YES));
                 doc.add(new StringField("filename", f.getName(), Field.Store.YES));
 
