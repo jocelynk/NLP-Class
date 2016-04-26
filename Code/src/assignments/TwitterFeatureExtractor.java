@@ -101,7 +101,7 @@ public class TwitterFeatureExtractor {
         features.add(new Pair("WORD", word));
 
         //word lower
-        features.add(new Pair("WORDLOWER", word.toLowerCase()));
+        //features.add(new Pair("WORDLOWER", word.toLowerCase()));
 
         //previous word
         if (position > 0) {
@@ -124,32 +124,32 @@ public class TwitterFeatureExtractor {
         }
 
         //Suffix
-        if (word.length() > 4) {
+        /*if (word.length() > 4) {
             Pair<String, String> suffix = new Pair("SUFFIX-4", word.substring(word.length() - 4).toLowerCase());
             features.add(suffix);
-        }
+        }*/
         if (word.length() > 3) {
             Pair<String, String> suffix = new Pair("SUFFIX-3", word.substring(word.length() - 3).toLowerCase());
             features.add(suffix);
         }
-        if (word.length() > 2) {
+       /* if (word.length() > 2) {
             Pair<String, String> suffix = new Pair("SUFFIX-2", word.substring(word.length() - 2).toLowerCase());
             features.add(suffix);
-        }
+        }*/
 
         //Prefix
-        if (word.length() > 4) {
+       /* if (word.length() > 4) {
             Pair<String, String> prefix = new Pair("PREFIX-4", word.substring(0, 5).toLowerCase());
             features.add(prefix);
-        }
+        }*/
         if (word.length() > 3) {
             Pair<String, String> prefix = new Pair("PREFIX-3", word.substring(0, 4).toLowerCase());
             features.add(prefix);
         }
-        if (word.length() > 2) {
+       /* if (word.length() > 2) {
             Pair<String, String> prefix = new Pair("PREFIX-2", word.substring(0, 3).toLowerCase());
             features.add(prefix);
-        }
+        }*/
 
         //All punctuation, i.e. !!!! or , or .
         if (word.matches("^([^\\w\\d\\s]{2,})$")) {
@@ -260,23 +260,23 @@ public class TwitterFeatureExtractor {
             features.add(allCaps);
         }
 
-        if(previousWord.length() > 0) {
-            matcher = pattern.matcher(previousWord);
-            if (matcher.find()) {
-                Pair<String, Boolean> allCaps = new Pair("WORD-1+ALLCAPS", true);
-                features.add(allCaps);
-            }
-
-        }
-
-        if(followingWord.length() > 0) {
-            matcher = pattern.matcher(previousWord);
-            if (matcher.find()) {
-                Pair<String, Boolean> allCaps = new Pair("WORD+1+ALLCAPS", true);
-                features.add(allCaps);
-            }
-
-        }
+//        if(previousWord.length() > 0) {
+//            matcher = pattern.matcher(previousWord);
+//            if (matcher.find()) {
+//                Pair<String, Boolean> allCaps = new Pair("WORD-1+ALLCAPS", true);
+//                features.add(allCaps);
+//            }
+//
+//        }
+//
+//        if(followingWord.length() > 0) {
+//            matcher = pattern.matcher(previousWord);
+//            if (matcher.find()) {
+//                Pair<String, Boolean> allCaps = new Pair("WORD+1+ALLCAPS", true);
+//                features.add(allCaps);
+//            }
+//
+//        }
 
         //Title
         pattern = Pattern.compile("^[A-Z][a-z]{0,}$");
@@ -286,23 +286,23 @@ public class TwitterFeatureExtractor {
         else
             features.add(new Pair("TITLE", false));
 
-        if(previousWord.length() > 0) {
-            matcher = pattern.matcher(word);
-            if (matcher.find())
-                features.add(new Pair("WORD-1+TITLE", true));
-            else
-                features.add(new Pair("WORD-1+TITLE", false));
-
-        }
-
-        if(followingWord.length() > 0) {
-            matcher = pattern.matcher(word);
-            if (matcher.find())
-                features.add(new Pair("WORD+1+TITLE", true));
-            else
-                features.add(new Pair("WORD+1+TITLE", false));
-
-        }
+//        if(previousWord.length() > 0) {
+//            matcher = pattern.matcher(word);
+//            if (matcher.find())
+//                features.add(new Pair("WORD-1+TITLE", true));
+//            else
+//                features.add(new Pair("WORD-1+TITLE", false));
+//
+//        }
+//
+//        if(followingWord.length() > 0) {
+//            matcher = pattern.matcher(word);
+//            if (matcher.find())
+//                features.add(new Pair("WORD+1+TITLE", true));
+//            else
+//                features.add(new Pair("WORD+1+TITLE", false));
+//
+//        }
 
         //Mixcase
         pattern = Pattern.compile("^[a-zA-Z]*(?:[a-z][A-Z]|[A-Z][a-z])[a-zA-Z]*");
@@ -316,20 +316,38 @@ public class TwitterFeatureExtractor {
         //Initials
         pattern = Pattern.compile("^(?:[A-Z]{1}\\.{1}|[A-Z]{1}\\.{1}[A-Z]{1})+$");
         matcher = pattern.matcher(word);
-        Pair<String, Boolean> initials;
         if (matcher.find())
             features.add(new Pair("INITIALS", true));
         else
             features.add(new Pair("INITIALS", false));
 
         // Nominalization suffixes
-        pattern = Pattern.compile("(ings?|ions?|ments?|nces?)$");
+//        pattern = Pattern.compile("(ings?|ions?|ments?|nces?)$");
+//        matcher = pattern.matcher(word);
+//        if (matcher.find())
+//            features.add(new Pair("NOMINALIZATION", true));
+//        else
+//            features.add(new Pair("NOMINALIZATION", false));
+
+        pattern = Pattern.compile("^[A-Z]");
         matcher = pattern.matcher(word);
         if (matcher.find())
-            features.add(new Pair("NOMINALIZATION", true));
-        else
-            features.add(new Pair("NOMINALIZATION", false));
+            features.add(new Pair("INITCAP", true));
 
+        pattern = Pattern.compile(".*[0-9].*");
+        matcher = pattern.matcher(word);
+        if (matcher.find())
+            features.add(new Pair("HASDIGIT", true));
+
+        pattern = Pattern.compile("[0-9]");
+        matcher = pattern.matcher(word);
+        if (matcher.find())
+            features.add(new Pair("SINGLEDIGIT", true));
+
+        pattern = Pattern.compile("[0-9][0-9]");
+        matcher = pattern.matcher(word);
+        if (matcher.find())
+            features.add(new Pair("DOUBLEDIGIT", true));
 
         /***Features of Labels***/
 
@@ -359,11 +377,15 @@ public class TwitterFeatureExtractor {
             features.add(new Pair("NOUN", false));
 
 
-       /* //Adjective
+        //Adjective
         if (feature.getPosTag().equals("A")) {
             features.add(new Pair("ADJ", true));
-        } else
-            features.add(new Pair("ADJ", false));*/
+        }
+
+        //Determiner
+        if (feature.getPosTag().equals("D")) {
+            features.add(new Pair("DET", true));
+        }
 
         //Dependency Tree POS relation
         features.add(new Pair("POS_TAG", feature.getPosTag()));
@@ -441,7 +463,7 @@ public class TwitterFeatureExtractor {
         }
 
         //Place in possible named entity
-        if(feature.getPosTag().equals("N") || feature.getPosTag().equals("^")) {
+        /*if(feature.getPosTag().equals("N") || feature.getPosTag().equals("^")) {
             int head = START_STOP_INCLUDED ? feature.getHead() : feature.getHead() - 1;
             if(head > 1 && (feature.getHead() == 0 || (!sentence.get(head).getPosTag().equals("N") && !sentence.get(head).getPosTag().equals("^")))) {
                 features.add(new Pair<>("EXPRESSION_POSITION", "END"));
@@ -452,7 +474,19 @@ public class TwitterFeatureExtractor {
             } else if(position == 0) {
                 features.add(new Pair<>("EXPRESSION_POSITION", "BEGIN"));
             }
+        }*/
 
+        if(posTagsInclude.contains(feature.getPosTag())) {
+            int head = START_STOP_INCLUDED ? feature.getHead() : feature.getHead() - 1;
+            if(head > 1 && (feature.getHead() == 0 || !posTagsInclude.contains(feature.getPosTag()))) {
+                features.add(new Pair<>("EXPRESSION_POSITION", "END"));
+            } else if(position > 0 && posTagsInclude.contains(feature.getPosTag()) && sentence.get(position-1).getHead() == feature.getId()) {
+                features.add(new Pair<>("EXPRESSION_POSITION", "MIDDLE"));
+            } else if(position > 0 && sentence.get(position-1).getHead() != feature.getId()) {
+                features.add(new Pair<>("EXPRESSION_POSITION", "BEGIN"));
+            } else if(position == 0) {
+                features.add(new Pair<>("EXPRESSION_POSITION", "BEGIN"));
+            }
         }
 
         /*String longestTag = "";
@@ -531,36 +565,23 @@ public class TwitterFeatureExtractor {
 
 
         //Word In Dictionary
-        if(!posTagsExclude.contains(feature.getPosTag())) {
-            List<String> ngrams = createNGrams(position, sentence, 2, START_STOP_INCLUDED ? 1 : 0);
-            int longestGramLength = 0;
-            for(String gram : ngrams) {
-                if(gram.indexOf("*") < 0 && gram.indexOf("?") < 0) {
-
-                    List<String> files = findInDictionary(gram);
-                    for(String f : files) {
-                        features.add(new Pair<>("DICT", f));
-                        int gramLength = gram.split(" ").length;
-                        if(gramLength > 1) {
-                            features.add(new Pair<>("DICTWIN", gramLength));
-                        }
-                    }
-                    /*if (findInDictionary(gram)) {
-                        if(gram.length() > longestGramLength) {
-                            longestGramLength = gram.length();
-                        }
-                    }*/
-                }
-            }
-
-           /* if(longestGramLength > 0) {
-                //System.out.println(longestGram);
-                features.add(new Pair<>("IN_NAMED_ENTITY_DICT", true));
-                //features.add(new Pair<>("LENGTH_GRAM_IN_DICT", longestGramLength));
-            } else {
-                features.add(new Pair<>("IN_NAMED_ENTITY_DICT", false));
-            }*/
-        }
+//        if(!posTagsExclude.contains(feature.getPosTag())) {
+//            List<String> ngrams = createNGrams(position, sentence, 2, START_STOP_INCLUDED ? 1 : 0);
+//            int longestGramLength = 0;
+//            for(String gram : ngrams) {
+//                if(gram.indexOf("*") < 0 && gram.indexOf("?") < 0) {
+//
+//                    List<String> files = findInDictionary(gram);
+//                    for(String f : files) {
+//                        features.add(new Pair<>("DICT", f));
+//                        int gramLength = gram.split(" ").length;
+//                        if(gramLength > 1) {
+//                            features.add(new Pair<>("DICTWIN", gramLength));
+//                        }
+//                    }
+//                }
+//            }
+//        }
 
 
         return features;

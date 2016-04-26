@@ -500,7 +500,7 @@ public class NamedEntityExtractor {
         //Maxent
         //Boolean featuresCreated = createFeatures(MAXENT_DATA, true, true);
 
-        if(featuresCreated) {
+        if(false) {
             createMaxEnt();
             double numTagsCorrect = 0;
             double numTags = 0;
