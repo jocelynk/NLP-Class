@@ -124,7 +124,7 @@ def evaluate_taggings(goldseq_predseq_pairs, ignore_labels=False):
     prec = tp/(tp+fp) if (tp+fp)>0 else 0
     rec =  tp/(tp+fn) if (tp+fn)>0 else 0
     f1 = 2*prec*rec / (prec + rec)
-    print "F = {f1:.4f},  Prec = {prec:.4f} ({tp}/{tpfp}),  Rec = {rec:.4f} ({tp}/{tpfn})".format(
+    print "F = {f1:.6f},  Prec = {prec:.4f} ({tp}/{tpfp}),  Rec = {rec:.4f} ({tp}/{tpfn})".format(
             tpfp=tp+fp, tpfn=tp+fn, **locals())
     print "({num_sent} sentences, {num_tokens} tokens, {num_goldspans} gold spans, {num_predspans} predicted spans)".format(**locals())
 
